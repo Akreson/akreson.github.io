@@ -1,7 +1,7 @@
 {% comment %}
   Detect appearance language and return it through variable "lang"
 {% endcomment %}
-{% if page.pagelang %}
+{% if site.languages contains page.pagelang %}
   {% assign lang = page.pagelang %}
 {% else %}
   {% assign lang = 'en' %}
