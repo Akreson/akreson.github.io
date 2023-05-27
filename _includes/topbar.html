@@ -1,5 +1,7 @@
 <!-- The Top Bar -->
 
+{% capture home_url %}/{{include.lang}}/{% endcapture %}
+
 <div id="topbar-wrapper">
   <div
     id="topbar"
@@ -8,15 +10,16 @@
     <span id="breadcrumb">
       {% assign paths = page.url | split: '/' %}
 
-      {% if paths.size == 0 or page.layout == 'home' %}
+      {% if page.layout == 'home' or paths.size == 0 %}
         <!-- index page -->
         <span>{{ site.data.locales[include.lang].tabs.home | capitalize }}</span>
 
       {% else %}
+        {% assign paths = paths | shift %}
         {% for item in paths %}
           {% if forloop.first %}
             <span>
-              <a href="{{ '/' | relative_url }}">
+              <a href="{{ home_url | relative_url }}">
                 {{ site.data.locales[include.lang].tabs.home | capitalize }}
               </a>
             </span>
@@ -30,7 +33,8 @@
 
           {% elsif page.layout == 'category' or page.layout == 'tag' %}
             <span>
-              <a href="{{ item | relative_url }}">
+              {% capture item_url %}/{{include.lang}}/{{item}}/{% endcapture %}
+              <a href="{{ item_url | relative_url }}">
                 {{ site.data.locales[include.lang].tabs[item] | default: page.title }}
               </a>
             </span>
