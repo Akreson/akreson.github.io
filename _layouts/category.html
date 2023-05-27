@@ -4,16 +4,17 @@ layout: page
 ---
 
 {% include lang.html %}
+{% assign category_post = site.categories[page.category] | where: "pagelang", lang %}
 
 <div id="page-category">
   <h1 class="ps-lg-2">
     <i class="far fa-folder-open fa-fw text-muted"></i>
     {{ page.title }}
-    <span class="lead text-muted ps-2">{{ page.posts | size }}</span>
+    <span class="lead text-muted ps-2">{{ category_post | size }}</span>
   </h1>
 
   <ul class="post-content ps-0">
-    {% for post in page.posts %}
+    {% for post in category_post %}
       <li class="d-flex justify-content-between px-md-3">
         <a href="{{ post.url | relative_url }}">{{ post.title }}</a>
         <span class="dash flex-grow-1"></span>

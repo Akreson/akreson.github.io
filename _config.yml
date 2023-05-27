@@ -134,7 +134,9 @@ kramdown:
 
 collections:
   categs_clet:
+    output: true
   tags_clet:
+    output: true
   tabs:
     output: true
     sort_by: order
