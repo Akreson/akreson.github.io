@@ -3,6 +3,8 @@ layout: page
 # All the Tags of posts.
 ---
 
+{% include lang.html %}
+
 <div id="tags" class="d-flex flex-wrap mx-xl-2">
   {% assign tags = '' | split: '' %}
   {% for t in site.tags %}
@@ -12,10 +14,13 @@ layout: page
   {% assign sorted_tags = tags | sort_natural %}
 
   {% for t in sorted_tags %}
+    {% assign tag_post_count = site.tags[t] | where: "pagelang", lang | size %}
+
     <div>
-      <a class="tag" href="{{ t | slugify | url_encode | prepend: '/tags/' | append: '/' | relative_url }}">
+      {% capture tag_url %}/{{lang}}/tags/{{t | slugify | url_encode}}/{% endcapture %}
+      <a class="tag" href="{{ tag_url | relative_url }}">
         {{ t -}}
-        <span class="text-muted">{{ site.tags[t].size }}</span>
+        <span class="text-muted">{{ tag_post_count }}</span>
       </a>
     </div>
   {% endfor %}
