@@ -1,6 +1,5 @@
 ---
 title: Getting Started 3
-author: cotes
 date: 2020-08-09 20:55:00 +0800
 categories: [Log]
 tags: [getting started]
