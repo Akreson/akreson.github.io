@@ -189,14 +189,14 @@ defaults:
     values:
       pagelang: ua
       layout: tag
-      permalink: /ua/tags/:name
+      permalink: /ua/tags/:name/
   - scope:
       path: "_tags_clet/en/"
       type: tags_clet # see `site.collections`
     values:
       pagelang: en
       layout: tag
-      permalink: /en/tags/:name
+      permalink: /en/tags/:name/
   # -- end-tags
   # -- start-category
   - scope:
