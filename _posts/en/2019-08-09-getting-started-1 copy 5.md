@@ -1,8 +1,8 @@
 ---
 title: Getting Started 6
 author: cotes
-date: 2019-08-09 20:55:00 +0800
-categories: [Blogging, Tutorial]
+date: 2018-08-09 20:54:00 +0800
+categories: [Blogging, Demo]
 tags: [getting started]
 pin: false
 ---
