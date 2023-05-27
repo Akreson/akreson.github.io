@@ -4,7 +4,7 @@
 {% assign posts = site.posts | where: 'pagelang', include.lang %}
 
 <div id="access-lastmod" class="post">
-  <div class="panel-heading">{{- site.data.locales[include.lang].panel.lastmod -}}</div>
+  <div class="panel-heading">{{- site.data.locales[include.lang].panel.recent -}}</div>
   <ul class="post-content list-unstyled ps-0 pb-1 ms-1 mt-2">
     {% for post in posts limit: MAX_SIZE %}
       {% assign url = post.url | relative_url %}

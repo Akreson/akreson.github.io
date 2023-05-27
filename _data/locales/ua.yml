@@ -23,6 +23,7 @@ search:
   no_results: Ох! Нічого не знайдено.
 
 panel:
+  recent: Останні публікації
   lastmod: Нещодавно оновлено
   trending_tags: Популярні теги
   toc: Зміст
