@@ -10,15 +10,17 @@
 {% assign TAG_SCORE = 1 %}
 
 <!-- Equals to TAG_SCORE / {max_categories_hierarchy} -->
+
 {% assign CATEGORY_SCORE = 0.5 %}
 
 {% assign SEPARATOR = ':' %}
 
+{% assign posts = site.posts | where: 'pagelang', lang %}
 {% assign score_list = '' | split: '' %}
-{% assign last_index = site.posts.size | minus: 1 %}
+{% assign last_index = posts.size | minus: 1 %}
 
 {% for i in (0..last_index) %}
-  {% assign post = site.posts[i] %}
+  {% assign post = posts[i] %}
 
   {% if post.url == page.url %}
     {% continue %}
@@ -59,7 +61,7 @@
 
 {% if less > 0 %}
   {% for i in (0..last_index) %}
-    {% assign post = site.posts[i] %}
+    {% assign post = posts[i] %}
     {% if post.url != page.url %}
       {% capture cur_index %}{{ i }}{% endcapture %}
       {% unless index_list contains cur_index %}
@@ -81,7 +83,7 @@
     <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4 mb-4">
       {% for entry in index_list %}
         {% assign index = entry | plus: 0 %}
-        {% assign post = site.posts[index] %}
+        {% assign post = posts[index] %}
         <div class="col">
           <a href="{{ post.url | relative_url }}" class="card post-preview h-100">
             <div class="card-body">

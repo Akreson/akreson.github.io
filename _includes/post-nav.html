@@ -1,13 +1,42 @@
 <!-- Navigation buttons at the bottom of the post. -->
 
-<div class="post-navigation d-flex justify-content-between">
-  {% if page.previous.url %}
+{% assign posts = site.posts | where: 'pagelang', lang %}
+{% assign next_page_id = false %}
+{% assign prev_page_id = false %}
+
+{% if posts.size > 1 %}
+  {% assign last_index = posts.size | minus: 1 %}
+
+  {% assign page_id = false %}
+
+  {% for i in (0..last_index) %}
+    {% if posts[i].url == page.url %}
+      {% assign page_id = i %}
+      {% break %}
+    {% endif %}
+  {% endfor %}
+
+  {% if page_id %}
+    {% if page_id > 0 %}
+      {% assign temp_page_id = page_id %}
+      {% assign next_page_id = temp_page_id | minus: 1 %}
+    {% endif %}
+
+    {% if page_id != last_index %}
+      {% assign temp_page_id = page_id %}
+      {% assign prev_page_id = temp_page_id | plus: 1 %}
+    {% endif %}
+  {% endif %}
+{% endif %}
+
+<div class="post-navigation d-flex justify-content-between" page-id="{{page_id}}" next-page-id="{{next_page_id}}" prev-page-id="{{prev_page_id}}">
+  {% if prev_page_id %}
     <a
-      href="{{ site.baseurl }}{{ page.previous.url }}"
+      href="{{ site.baseurl }}{{ posts[prev_page_id].url }}"
       class="btn btn-outline-primary"
       prompt="{{ site.data.locales[include.lang].post.button.previous }}"
     >
-      <p>{{ page.previous.title }}</p>
+      <p>{{ posts[prev_page_id].title }}</p>
     </a>
   {% else %}
     <div
@@ -18,13 +47,13 @@
     </div>
   {% endif %}
 
-  {% if page.next.url %}
+  {% if next_page_id %}
     <a
-      href="{{ site.baseurl }}{{page.next.url}}"
+      href="{{ site.baseurl }}{{posts[next_page_id].url}}"
       class="btn btn-outline-primary"
       prompt="{{ site.data.locales[include.lang].post.button.next }}"
     >
-      <p>{{ page.next.title }}</p>
+      <p>{{ posts[next_page_id].title }}</p>
     </a>
   {% else %}
     <div
