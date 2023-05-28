@@ -2,9 +2,10 @@
 layout: compress
 swcache: true
 ---
+{% assign posts = site.posts | where: 'pagelang', 'ua' %}
 
 [
-  {% for post in site.posts %}
+  {% for post in posts %}
   {
     "title": {{ post.title | jsonify }},
     "url": {{ post.url | relative_url | jsonify }},

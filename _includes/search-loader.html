@@ -15,13 +15,14 @@
 {% endcapture %}
 
 {% capture not_found %}<p class="mt-5">{{ site.data.locales[include.lang].search.no_results }}</p>{% endcapture %}
+{% capture search_data_path %}/assets/js/data/{{lang}}/search.json{% endcapture %}
 
 <script>
   /* Note: dependent library will be loaded in `js-selector.html` */
   SimpleJekyllSearch({
     searchInput: document.getElementById('search-input'),
     resultsContainer: document.getElementById('search-results'),
-    json: '{{ '/assets/js/data/search.json' | relative_url }}',
+    json: '{{ search_data_path | relative_url }}',
     searchResultTemplate: '{{ result_elem | strip_newlines }}',
     noResultsText: '{{ not_found }}',
     templateMiddleware: function(prop, value, template) {
