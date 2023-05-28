@@ -1,5 +1,5 @@
 ---
-title: Розпочинаємо 1
+title: Розпочинаємо 8
 date: 2018-08-09 20:55:00 +0800
 categories: [Blogging, Tutorial]
 tags: [getting started, hellow]

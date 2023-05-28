@@ -1,9 +1,9 @@
 ---
-title: Розпочинаємо 2
+title: Розпочинаємо 4
 date: 2019-08-09 20:55:00 +0800
 categories: [Blogging, Tutorial]
-tags: [getting started, hellow]
-pin: false
+tags: [getting started]
+pin: true
 ---
 
 ## Prerequisites

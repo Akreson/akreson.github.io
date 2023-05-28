@@ -1,9 +1,9 @@
 ---
-title: Розпочинаємо 11
-date: 2019-08-09 20:55:00 +0800
-categories: [Blogging, Tutorial]
+title: Розпочинаємо 3
+date: 2020-08-09 20:55:00 +0800
+categories: [Log]
 tags: [getting started]
-pin: false
+pin: true
 ---
 
 ## Prerequisites
