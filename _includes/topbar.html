@@ -1,6 +1,15 @@
 <!-- The Top Bar -->
 
 {% capture home_url %}/{{include.lang}}/{% endcapture %}
+{% assign paths = page.url | split: '/' %}
+
+{% assign unlang_paths = '' | split: '' %}
+
+{%- for path_item in paths -%}
+  {%- if path_item != include.lang -%}
+    {% assign unlang_paths = unlang_paths | push: path_item %}
+  {%- endif -%}
+{%- endfor -%}
 
 <div id="topbar-wrapper">
   <div
@@ -8,15 +17,12 @@
     class="container d-flex align-items-center justify-content-between h-100"
   >
     <span id="breadcrumb">
-      {% assign paths = page.url | split: '/' %}
-
       {% if page.layout == 'home' or paths.size == 0 %}
         <!-- index page -->
         <span>{{ site.data.locales[include.lang].tabs.home | capitalize }}</span>
 
       {% else %}
-        {% assign paths = paths | shift %}
-        {% for item in paths %}
+        {% for item in unlang_paths %}
           {% if forloop.first %}
             <span>
               <a href="{{ home_url | relative_url }}">
@@ -56,19 +62,38 @@
         {{- site.data.locales[include.lang].layout[page.layout] | default: page.layout | capitalize -}}
       {% endif %}
     </div>
+    <span id="topbar-side-wrapper">
 
-    <i id="search-trigger" class="fas fa-search fa-fw"></i>
-    <span id="search-wrapper" class="align-items-center">
-      <i class="fas fa-search fa-fw"></i>
-      <input
-        class="form-control"
-        id="search-input"
-        type="search"
-        aria-label="search"
-        autocomplete="off"
-        placeholder="{{ site.data.locales[include.lang].search.hint | capitalize }}..."
-      >
+
+      <div id="lang-sec-center"> 	
+        <input class="lang-dropdown" type="checkbox" id="lang-dropdown" name="lang-dropdown"/>
+        <label class="lang-for-dropdown" for="lang-dropdown">{{lang | upcase}}</label>
+        {% if site.languages.size > 1 %}
+        <div class="lang-section-dropdown"> 
+          {% assign sort_langs = site.languages | sort %}
+          {%- for lang_item in sort_langs -%}
+            {%- if lang_item != lang -%}
+              {%- capture new_url -%}/{{lang_item}}{{unlang_paths | join: '/'}}{%- endcapture -%}
+              <a href="{{new_url | relative_url}}"><span>{{lang_item | upcase}}</span></a>
+              {%- endif -%}
+            {%- endfor -%}
+        </div>
+        {% endif %}
+      </div>
+
+      <i id="search-trigger" class="fas fa-search fa-fw"></i>
+      <span id="search-wrapper" class="align-items-center">
+        <i class="fas fa-search fa-fw"></i>
+        <input
+          class="form-control"
+          id="search-input"
+          type="search"
+          aria-label="search"
+          autocomplete="off"
+          placeholder="{{ site.data.locales[include.lang].search.hint | capitalize }}..."
+        >
+      </span>
+      <span id="search-cancel">{{ site.data.locales[include.lang].search.cancel }}</span>
     </span>
-    <span id="search-cancel">{{ site.data.locales[include.lang].search.cancel }}</span>
   </div>
 </div>

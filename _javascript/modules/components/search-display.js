@@ -12,6 +12,7 @@ const $results = $('#search-results');
 const $input = $('#search-input');
 const $hints = $('#search-hints');
 const $viewport = $('html,body');
+const $langpanel = $('#lang-sec-center');
 
 // class names
 const C_LOADED = 'loaded';
@@ -41,6 +42,7 @@ class MobileSearchBar {
     $btnSearchTrigger.addClass(C_UNLOADED);
     $searchWrapper.addClass(C_FLEX);
     $btnCancel.addClass(C_LOADED);
+    $langpanel.addClass(C_UNLOADED);
   }
 
   static off() {
@@ -49,6 +51,7 @@ class MobileSearchBar {
     $btnSbTrigger.removeClass(C_UNLOADED);
     $topbarTitle.removeClass(C_UNLOADED);
     $btnSearchTrigger.removeClass(C_UNLOADED);
+    $langpanel.removeClass(C_UNLOADED);
   }
 }
 
@@ -87,6 +90,7 @@ function isMobileView() {
 
 export function displaySearch() {
   $btnSearchTrigger.on('click', function () {
+    console.log("dsgdfgd");
     MobileSearchBar.on();
     ResultSwitch.on();
     $input.trigger('focus');

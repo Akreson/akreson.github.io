@@ -4,3 +4,168 @@
 @import '{{ site.theme }}';
 
 /* append your custom style below */
+
+#topbar-side-wrapper
+{
+    display:flex;
+    align-items: center;
+}
+
+// https://codepen.io/ig_design/pen/MWKVrNR
+
+#lang-sec-center {
+    font-size: 15px;
+    position: relative;
+    max-width: 100%;
+    text-align: center;
+    z-index: 200;
+    margin-right: 25px;
+    color: var(--text-color);
+
+    #lang-dropdown:checked,
+    #lang-dropdown:not(:checked){
+        position: absolute;
+        top: -9999px;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    #lang-dropdown:checked + label,
+    #lang-dropdown:not(:checked) + label{
+        position: relative;
+        font-family: 'Roboto', sans-serif;
+        font-weight: 500;
+        line-height: 2;
+        height: 30px;
+        transition: all 200ms ease-out;
+        border-radius: 4px;
+        width: 50px;
+        letter-spacing: 1px;
+        display: -webkit-inline-flex;
+        display: -ms-inline-flexbox;
+        display: inline-flex;
+        -webkit-align-items: center;
+        -moz-align-items: center;
+        -ms-align-items: center;
+        align-items: center;
+        -webkit-justify-content: center;
+        -moz-justify-content: center;
+        -ms-justify-content: center;
+        justify-content: center;
+        -ms-flex-pack: center;
+        text-align: center;
+        border: none;
+        background-color: var(--main-bg);
+        cursor: pointer;
+        //box-shadow: 0 12px 35px 0 rgba(255,235,167,.15);
+    }
+
+    #lang-dropdown:checked + .lang-for-dropdown{
+        background-color: var(--hover-lang-bgr);
+        color: #102770;
+    }
+
+    #lang-dropdown:not(:checked) + .lang-for-dropdown:hover {
+        background-color: var(--hover-lang-bgr);
+        color: #102770;
+    }
+
+    #lang-dropdown:checked + label:before,
+    #lang-dropdown:not(:checked) + label:before{
+        position: fixed;
+        top: 0;
+        left: 0;
+        content: '';
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        cursor: auto;
+        pointer-events: none;
+    }
+
+    #lang-dropdown:checked + label:before{
+        pointer-events: auto;
+    }
+    
+    .lang-section-dropdown {
+        letter-spacing: 1px;
+        position: absolute;
+        padding: 2px;
+        background-color: var(--main-bg);
+        border: 2px solid var(--hover-lang-bgr);
+        top: 50px;
+        left: 0;
+        width: 100%;
+        border-radius: 4px;
+        display: block;
+        //box-shadow: 0 14px 35px 0 rgba(9,9,12,0.4);
+        z-index: 2;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(20px);
+        transition: all 200ms ease-out;
+    }
+    
+    #lang-dropdown:checked ~ .lang-section-dropdown{
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0);
+    }
+    .lang-section-dropdown:before {
+        position: absolute;
+        top: -20px;
+        left: 0;
+        width: 100%;
+        height: 20px;
+        content: '';
+        display: block;
+        z-index: 1;
+    }
+    .lang-section-dropdown:after {
+        position: absolute;
+        top: -7px;
+        left: 8px;
+        width: 0; 
+        height: 0; 
+        border-left: 15px solid transparent;
+        border-right: 15px solid transparent; 
+        border-bottom: 7px solid var(--hover-lang-bgr);
+        content: '';
+        display: block;
+        z-index: 2;
+        transition: all 150ms ease-out;
+    }
+
+    a {
+        position: relative;
+        color: var(--text-color);
+        transition: all 150ms ease-out;
+        font-family: 'Roboto', sans-serif;
+        font-weight: 500;
+        border-radius: 2px;
+        padding: 3px 4px;
+        // padding-left: 20px;
+        // padding-right: 15px;
+        margin: 2px 0;
+        text-align: center;
+        text-decoration: none;
+        display: -ms-flexbox;
+        display: flex;
+        -webkit-align-items: center;
+        -moz-align-items: center;
+        -ms-align-items: center;
+        align-items: center;
+        justify-content: center;
+        -ms-flex-pack: distribute;
+    }
+    
+    a:hover {
+        color: #102770;
+        background-color: var(--hover-lang-bgr);
+    }
+}
+
+#lang-sec-center.unloaded
+{
+    display: none;
+}
