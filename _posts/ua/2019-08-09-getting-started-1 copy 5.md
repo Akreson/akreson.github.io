@@ -1,6 +1,6 @@
 ---
 title: Розпочинаємо 12
-date: 2018-08-09 20:54:00 +0800
+date: 2017-08-09 20:54:00 +0800
 categories: [Blogging, Demo]
 tags: [getting started]
 pin: false

@@ -1,6 +1,6 @@
 ---
 title: Розпочинаємо 8
-date: 2018-08-09 20:55:00 +0800
+date: 2017-08-09 22:55:00 +0800
 categories: [Blogging, Tutorial]
 tags: [getting started, hellow]
 pin: false

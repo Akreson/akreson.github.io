@@ -1,7 +1,7 @@
 ---
 title: Getting Started 7
 author: cotes
-date: 2019-08-09 20:55:00 +0800
+date: 2017-08-09 21:55:00 +0800
 categories: [Blogging, Tutorial]
 tags: [getting started, hellow]
 pin: false
