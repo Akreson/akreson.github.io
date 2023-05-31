@@ -2,13 +2,13 @@
 
 <ul class="pagination align-items-center mt-4 mb-1 ps-lg-2">
   <!-- left arrow -->
-  {% if paginator.previous_page %}
-    {% assign prev_url = paginator.previous_page_path | relative_url %}
+  {% if page.previous_page %}
+    {% assign prev_url = page.previous_page_path | relative_url %}
   {% else %}
     {% assign prev_url = '#' %}
   {% endif %}
 
-  <li class="page-item {% unless paginator.previous_page %}disabled{% endunless %}">
+  <li class="page-item {% unless page.previous_page %}disabled{% endunless %}">
     <a class="page-link btn-box-shadow" href="{{ prev_url }}" aria-label="previous-page">
       <i class="fas fa-angle-left"></i>
     </a>
@@ -18,23 +18,23 @@
   {% assign left_ellipsis = false %}
   {% assign right_ellipsis = false %}
 
-  {% for i in (1..paginator.total_pages) %}
-    {% assign pre = paginator.page | minus: 1 %}
-    {% assign next = paginator.page | plus: 1 %}
+  {% for i in (1..include.total_pages) %}
+    {% assign pre = page.pagenum | minus: 1 %}
+    {% assign next = page.pagenum | plus: 1 %}
     {% assign pre_less = pre | minus: 1 %}
     {% assign next_more = next | plus: 1 %}
     {% assign show = false %}
 
-    {% if paginator.page == 1 %}
-      {% if i <= 3 or i == paginator.total_pages %}
+    {% if page.pagenum == 1 %}
+      {% if i <= 3 or i == include.total_pages %}
         {% assign show = true %}
       {% endif %}
-    {% elsif paginator.page == paginator.total_pages %}
+    {% elsif page.pagenum == include.total_pages %}
       {% if i == 1 or i >= pre_less %}
         {% assign show = true %}
       {% endif %}
     {% else %}
-      {% if i == 1 or i == paginator.total_pages %}
+      {% if i == 1 or i == include.total_pages %}
         {% assign show = true %}
       {% elsif i >= pre and i <= next %}
         {% assign show = true %}
@@ -43,10 +43,15 @@
 
     {% if show %}
       <!-- show number -->
-      <li class="page-item {% if i == paginator.page %} active{% endif %}">
+      <li class="page-item {% if i == page.pagenum %} active{% endif %}">
+        {% if i > 1 %}
+          {%- capture pake_link_path -%}/{{lang}}/page{{i}}/{%- endcapture -%}
+        {%else%}
+          {%- capture pake_link_path -%}/{{lang}}/{%- endcapture -%}
+        {%endif%}
         <a
           class="page-link btn-box-shadow"
-          href="{% if i > 1 %}{{ site.paginate_path | replace: ':num', i | relative_url }}{% else %}{{ '/' | relative_url }}{% endif %}"
+          href="{{pake_link_path}}"
         >
           {{- i -}}
         </a>
@@ -69,18 +74,18 @@
 
   <!-- mobile pagination -->
   <li class="page-index align-middle">
-    <span>{{ paginator.page }}</span>
-    <span class="text-muted">/ {{ paginator.total_pages }}</span>
+    <span>{{ page.pagenum }}</span>
+    <span class="text-muted">/ {{ include.total_pages }}</span>
   </li>
 
   <!-- right arrow -->
-  {% if paginator.next_page_path %}
-    {% assign next_url = paginator.next_page_path | relative_url %}
+  {% if page.next_page %}
+    {% assign next_url = page.next_page_path | relative_url %}
   {% else %}
     {% assign next_url = '#' %}
   {% endif %}
 
-  <li class="page-item {% unless paginator.next_page_path %}disabled{% endunless %}">
+  <li class="page-item {% unless page.next_page %}disabled{% endunless %}">
     <a class="page-link btn-box-shadow" href="{{ next_url }}" aria-label="next-page">
       <i class="fas fa-angle-right"></i>
     </a>

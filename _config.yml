@@ -12,7 +12,8 @@ baseurl: ""
 # otherwise, the layout language will use the default value of 'en'.
 lang: en
 languages: [en, ua]
-
+per_page: 10
+per_page_float: 10.0
 # Change to your timezone › http://www.timezoneconverter.com/cgi-bin/findzone/findzone
 timezone: Europe/Kiev
 
@@ -135,6 +136,8 @@ collections:
     output: true
   tags_clet:
     output: true
+  pages_clet:
+    output: true
   tabs:
     output: true
     sort_by: order
@@ -212,6 +215,22 @@ defaults:
       layout: category
       permalink: /en/categories/:name/
   # -- end-category
+   # -- start-pages
+  - scope:
+      path: "_pages_clet/ua/"
+      type: pages_clet # see `site.collections`
+    values:
+      pagelang: ua
+      layout: home
+      permalink: /ua/:name/
+  - scope:
+      path: "_pages_clet/en/"
+      type: pages_clet # see `site.collections`
+    values:
+      pagelang: en
+      layout: home
+      permalink: /en/:name/
+  # -- end-pages
   - scope:
       path: _drafts
     values:

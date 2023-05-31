@@ -3,9 +3,6 @@ layout: page
 refactor: true
 ---
 
-<!-- can't fully controll pagination plagin from liquid, go without pagination for now -->
-
-
 {% include lang.html %}
 
 {% assign pinned = site.posts | where: 'pagelang', lang | where: 'pin', 'true' %}
@@ -15,11 +12,8 @@ refactor: true
 
 <!-- Get pinned posts -->
 
-{% assign offset = paginator.page | minus: 1 | times: paginator.per_page %}
-{% assign pinned_num = pinned.size | minus: offset %}
-
-{% if pinned_num > 0 %}
-  {% for i in (offset..pinned.size) limit: pinned_num %}
+{% if pinned.size > 0 %}
+  {% for i in (0..pinned.size) limit: pinned.size %}
     {% assign posts = posts | push: pinned[i] %}
   {% endfor %}
 {% else %}
@@ -28,22 +22,13 @@ refactor: true
 
 <!-- Get default posts -->
 
-{% assign default_beg = offset | minus: pinned.size %}
-
-{% if default_beg < 0 %}
-  {% assign default_beg = 0 %}
-{% endif %}
-
-{% assign default_num = paginator.posts | where: 'pagelang', lang | size | minus: pinned_num %}
-{% assign default_end = default_beg | plus: default_num | minus: 1 %}
-
-{% if default_num > 0 %}
-  {% for i in (default_beg..default_end) %}
+{% if default.size > 0 %}
+  {% for i in (0..default.size) limit: 3%}
     {% assign posts = posts | push: default[i] %}
   {% endfor %}
 {% endif %}
 
-<div default-num="{{paginator.page}}" id="post-list">
+<div id="post-list">
   {% for post in posts %}
     <a href="{{ post.url | relative_url }}" class="card-wrapper">
       <div class="card post-preview flex-md-row-reverse">
@@ -108,6 +93,3 @@ refactor: true
 </div>
 <!-- #post-list -->
 
-{% if paginator.total_pages > 1 %}
-  {% include post-paginator.html %}
-{% endif %}

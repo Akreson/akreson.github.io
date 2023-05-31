@@ -1,14 +1,15 @@
 import os
 import sys
+import datetime
+import math
 
-import json
-
-PARSE_ERROR_STR = "generator don't know how to parse {0} in {1}"
+PAGES_PER_PAGE = 10
 
 SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 POST_PATH = os.path.abspath(SCRIPT_PATH+"/../_posts")
 CATEG_PATH = os.path.abspath(SCRIPT_PATH+"/../_categs_clet")
 TAG_PATH = os.path.abspath(SCRIPT_PATH+"/../_tags_clet")
+PAGES_PATH = os.path.abspath(SCRIPT_PATH+"/../_pages_clet")
 
 class TokenType:
     UNKNOWN = 0
@@ -89,9 +90,24 @@ class ParseRange:
     def print(self):
         print("start {0} at {1} end {2}".format(self.start, self.at, self.end))
 
-class Post:
+class DatePram():
     def __init__(self):
-        self.params = dict()
+        self.year = 0
+        self.month = 0
+        self.day = 0
+        self.hour = 0
+        self.min = 0
+        self.sec = 0
+        self.zone = 0
+
+    def print(self):
+        print("year ", self.year)
+        print("month ", self.month)
+        print("day ", self.day)
+        print("hour ", self.hour)
+        print("min ", self.min)
+        print("sec ", self.sec)
+        print("zone ", self.zone)
 
 class PostsData:
     def __init__(self):
@@ -227,16 +243,69 @@ def get_list_name_field(data, parse_range, err_path):
     parse_range.at = eol_index
     return result_params
 
-
+# was lazy set correct error log because nobody except me will use it anyway
 def get_data_str(data, parse_range, err_path):
     eol_index = get_eol_index(data, parse_range)
     end_index = skip_space_back_itr(eol_index, data)
     skip_space(data, parse_range)
 
-    temp_result = data[parse_range.at:end_index]
-    temp_result = temp_result.decode("utf-8")
+    date_str = data[parse_range.at:end_index]
+    date_str = date_str.decode("utf-8")
+    date_arr = date_str.split(' ')
+
+    date_param = DatePram()
+
+    if len(date_arr[0]) != 10:
+        panic("{0}: date part of _date_ field is invalid".format(err_path))
+
+    if len(date_arr[1]) != 8:
+        panic("{0}: time part of _date_ field is invalid".format(err_path))
+    
+    if len(date_arr[2]) != 5:
+        panic("{0}: timezone part of _date_ field is invalid".format(err_path))
+
+    date_part = date_arr[0].split('-')
+    time_part = date_arr[1].split(':')
+
+    if len(date_part) != 3 or len(date_part[0]) != 4 or len(date_part[1]) != 2 or len(date_part[2]) != 2:
+        panic("{0}: date part of _date_ field is invalid".format(err_path))
+    if (not date_part[0].isnumeric()) or (not date_part[1].isnumeric()) or (not date_part[2].isnumeric()):
+        panic("{0}: date part of _date_ field contain non numeric char".format(err_path))
+
+    if len(time_part) != 3 or len(time_part[0]) != 2 or len(time_part[1]) != 2 or len(time_part[2]) != 2:
+        panic("{0}: time part of _date_ field is invalid".format(err_path))
+    if (not time_part[0].isnumeric()) or (not time_part[1].isnumeric()) or (not time_part[2].isnumeric()):
+        panic("{0}: time part of _date_ field contain non numeric char".format(err_path))
+    
+    if (not date_arr[2][1:3].isnumeric()) and ((date_arr[2][0] != '-') or (date_arr[2][0] != '+')):
+        panic("{0}: timezone part of _date_ field is invalid".format(err_path))
+    
+    date_param.zone = int(date_arr[2][1:3])
+    if date_param.zone > 24:
+        panic("{0}: timezone part of _date_ out of range".format(err_path))
+
+    if date_arr[2][0] == '-':
+        date_param.zone *= -1
+    
+    date_param.year = int(date_part[0])
+    date_param.month = int(date_part[1])
+    date_param.day = int(date_part[2])
+    date_param.hour = int(time_part[0])
+    date_param.min = int(time_part[1])
+    date_param.sec = int(time_part[2])
+
+    # bare check
+    if date_param.year > 9999 or date_param.month > 12 or date_param.day > 31:
+        panic("{0}: date part of _date_ out of range".format(err_path))
+    
+    if date_param.hour > 23 or date_param.min > 59 or date_param.sec > 59:
+        panic("{0}: date part of _date_ out of range".format(err_path))
+
     parse_range.at = eol_index
-    return temp_result
+    result_date = datetime.datetime(date_param.year, date_param.month, date_param.day,
+        date_param.hour, date_param.min, date_param.sec,
+        tzinfo=datetime.timezone(datetime.timedelta(hours=date_param.zone)))   
+    return result_date
 
 
 def get_bool_status(data, parse_range, err_path):
@@ -498,7 +567,7 @@ def check_posts_lang_copy(posts_folders, err_list):
                                 err_list.append(err_msg)
 
                         if post_lang_data[Field.DATE] != itr_post_data[Field.DATE]:
-                            err_msg = "post {0} in _{1}_ and _{2}_ should have same date".format(post_name, name, itr_name)
+                            err_msg = "post {0} in _{1}_ and _{2}_ should have same date {3} - {4}".format(post_name, name, itr_name, str(post_lang_data[Field.DATE]), str(itr_post_data[Field.DATE]))
                             err_list.append(err_msg)
                         
                         if post_lang_data[Field.PIN] != itr_post_data[Field.PIN]:
@@ -521,23 +590,26 @@ def check_start_up_paths():
 
         if not os.path.exists(TAG_PATH):
             os.makedirs(TAG_PATH)
-
         if not os.path.exists(CATEG_PATH):
             os.makedirs(CATEG_PATH)
+        if not os.path.exists(PAGES_PATH):
+            os.makedirs(PAGES_PATH)
     except OSError as e:
         panic(e)
 
-def create_collects_path(TAG_PATH, categ_path):
+def create_collects_path(tag_path, categ_path, pages_path):
     try:
         if not os.path.exists(tag_path):
             os.makedirs(tag_path)
         if not os.path.exists(categ_path):
             os.makedirs(categ_path)
+        if not os.path.exists(pages_path):
+            os.makedirs(pages_path)
     except OSError as e:
         panic(e)
 
 def open_file_write(folder_path, filename):
-    path = os.path.join(folder_path, filename+'.'+'md')
+    path = os.path.join(folder_path, filename)
     try:
         file_handle = open(path, "w")
     except OSError as e:
@@ -546,12 +618,39 @@ def open_file_write(folder_path, filename):
 
 def create_collect(name_dict, path, header_template):
     for name in name_dict:
-        file_handle = open_file_write(path, name)
+        file_handle = open_file_write(path, name+'.md')
         file_handle.write(header_template.format(name))
         file_handle.close()
 
+def create_pages(posts_dict, pages_path, lang):
+    pages_count = math.ceil(len(posts_dict)/PAGES_PER_PAGE);
+    for i in range(2, pages_count+1):
+        curr_page = 'page{0}.md'.format(i)
+
+        prev_path = ''
+        if (i-1) == 1:
+            prev_path = '/{0}/'.format(lang)
+        else:
+            prev_path = '/{0}/{1}'.format(lang, 'page{0}'.format(i-1))
+
+        has_next = 'true'
+        next_path = ''
+        if i != pages_count:
+            next_path = '/{0}/{1}'.format(lang, 'page{0}'.format(i+1))
+        else:
+            has_next = 'false'
+            next_path = '/'
+
+        has_next = 'true' if len(next_path) else 'false'        
+        page_str = PAGE_HEADER_TEMPLATE.format(i, 'true', prev_path, has_next, next_path)
+        #print(pages_path, curr_file_path)
+        page_file = open_file_write(pages_path, curr_page)
+        page_file.write(page_str)
+        page_file.close()
+
 TAG_HEADER_TEMPLATE = "---\ntitle: {0}\ntag: {0}\n---\n"
 CATEG_HEADER_TEMPLATE = "---\ntitle: {0}\ncategory: {0}\n---\n"
+PAGE_HEADER_TEMPLATE = "---\npagenum: {0}\nprevious_page: {1}\nprevious_page_path: {2}\nnext_page: {3}\nnext_page_path: {4}\n---\n"
 
 def gen_collect(posts_folders):
     for lang_name in posts_folders:
@@ -559,10 +658,12 @@ def gen_collect(posts_folders):
 
         tag_path = os.path.join(TAG_PATH, lang_name)
         categ_path = os.path.join(CATEG_PATH, lang_name)
+        pages_path = os.path.join(PAGES_PATH, lang_name)
 
-        create_collects_path(tag_path, categ_path)
+        create_collects_path(tag_path, categ_path, pages_path)
         create_collect(lang_posts.agg_tags, tag_path, TAG_HEADER_TEMPLATE)
         create_collect(lang_posts.agg_categ, categ_path, CATEG_HEADER_TEMPLATE)
+        create_pages(lang_posts.posts, pages_path, lang_name)
 
 def main():
     check_start_up_paths()

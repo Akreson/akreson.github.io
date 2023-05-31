@@ -3,17 +3,24 @@ layout: page
 refactor: true
 ---
 
+<!-- can't fully controll pagination plagin from liquid, go without pagination for now -->
+
+
 {% include lang.html %}
 
 {% assign pinned = site.posts | where: 'pagelang', lang | where: 'pin', 'true' %}
 {% assign default = site.posts | where: 'pagelang', lang | where_exp: 'item', 'item.pin != true and item.hidden != true' %}
+{% assign total_pages = pinned.size | plus: default.size | divided_by: site.per_page_float | ceil %}
 
 {% assign posts = '' | split: '' %}
 
 <!-- Get pinned posts -->
 
-{% if pinned.size > 0 %}
-  {% for i in (0..pinned.size) limit: pinned.size %}
+{% assign offset = page.pagenum | minus: 1 | times: site.per_page %}
+{% assign pinned_num = pinned.size | minus: offset %}
+
+{% if pinned_num > 0 %}
+  {% for i in (offset..pinned.size) limit: pinned_num %}
     {% assign posts = posts | push: pinned[i] %}
   {% endfor %}
 {% else %}
@@ -22,13 +29,26 @@ refactor: true
 
 <!-- Get default posts -->
 
-{% if default.size > 0 %}
-  {% for i in (0..default.size) limit: 3%}
+{% assign default_beg = offset | minus: pinned.size %}
+
+{% if default_beg < 0 %}
+  {% assign default_beg = 0 %}
+{% endif %}
+
+{% assign default_num = site.per_page | minus: pinned_num %}
+{% assign default_end = default_beg | plus: default_num | minus: 1 %}
+
+{% if default_end > default.size %}
+  {% assign default_end = default.size | minus: 1%}
+{% endif %}
+
+{% if default_num > 0 %}
+  {% for i in (default_beg..default_end)%}
     {% assign posts = posts | push: default[i] %}
   {% endfor %}
 {% endif %}
 
-<div id="post-list">
+<div default-num="{{page.pagenum}}" id="post-list"  data-offset="{{offset}}" data-pinned="{{pinned_num}}" data-dbeg="{{default_beg}}" data-t="{{total_pages}}" data-dnum="{{default_num}}" data-dend="{{default_end}}" def-size="{{default.size}}">
   {% for post in posts %}
     <a href="{{ post.url | relative_url }}" class="card-wrapper">
       <div class="card post-preview flex-md-row-reverse">
@@ -93,3 +113,6 @@ refactor: true
 </div>
 <!-- #post-list -->
 
+{% if total_pages > 1 %}
+  {% include post-paginator.html total_pages=total_pages lang=lang%}
+{% endif %}
