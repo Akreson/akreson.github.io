@@ -1,3 +1,4 @@
 ---
+title: Tutorial
 category: Tutorial
 ---

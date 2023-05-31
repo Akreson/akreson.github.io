@@ -1,3 +1,4 @@
 ---
-category: Tutorial
+title: Blogging
+category: Blogging
 ---

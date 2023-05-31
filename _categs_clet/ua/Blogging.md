@@ -1,3 +1,4 @@
 ---
+title: Blogging
 category: Blogging
 ---
