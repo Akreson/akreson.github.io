@@ -22,6 +22,15 @@
     margin-right: 25px;
     color: var(--text-color);
 
+    .lang-uniq {
+        font-family: 'Roboto', sans-serif;
+        font-weight: 500;
+        line-height: 2;
+        height: 30px;
+        width: 50px;
+        letter-spacing: 1px;
+    }
+
     #lang-dropdown:checked,
     #lang-dropdown:not(:checked){
         position: absolute;

@@ -65,20 +65,24 @@
     <span id="topbar-side-wrapper">
 
 
-      <div id="lang-sec-center"> 	
-        <input class="lang-dropdown" type="checkbox" id="lang-dropdown" name="lang-dropdown"/>
-        <label class="lang-for-dropdown" for="lang-dropdown">{{lang | upcase}}</label>
-        {% if site.languages.size > 1 %}
-        <div class="lang-section-dropdown"> 
-          {% assign sort_langs = site.languages | sort %}
-          {%- for lang_item in sort_langs -%}
-            {%- if lang_item != lang -%}
-              {%- capture new_url -%}/{{lang_item}}{{unlang_paths | join: '/'}}{%- endcapture -%}
-              <a href="{{new_url | relative_url}}"><span>{{lang_item | upcase}}</span></a>
-              {%- endif -%}
-            {%- endfor -%}
-        </div>
-        {% endif %}
+      <div id="lang-sec-center">
+        {% if page.languniq %}
+          <span calss="lang-uniq">{{lang | upcase}} ONLY</span>
+        {%else%}
+          <input class="lang-dropdown" type="checkbox" id="lang-dropdown" name="lang-dropdown"/>
+          <label class="lang-for-dropdown" for="lang-dropdown">{{lang | upcase}}</label>
+          {% if site.languages.size > 1 %}
+          <div class="lang-section-dropdown"> 
+            {% assign sort_langs = site.languages | sort %}
+            {%- for lang_item in sort_langs -%}
+              {%- if lang_item != lang -%}
+                {%- capture new_url -%}/{{lang_item}}{{unlang_paths | join: '/'}}{%- endcapture -%}
+                <a href="{{new_url | relative_url}}"><span>{{lang_item | upcase}}</span></a>
+                {%- endif -%}
+              {%- endfor -%}
+          </div>
+          {% endif %}
+        {%endif%}
       </div>
 
       <i id="search-trigger" class="fas fa-search fa-fw"></i>

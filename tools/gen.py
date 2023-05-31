@@ -483,9 +483,6 @@ def check_posts_lang_copy(posts_folders, err_list):
             for itr_name in itr_folders:
                 itr_dict = key_dict[itr_name]
 
-                if len(itr_dict) == 0:
-                    continue
-
                 if is_lang_uniq:
                     if post_name in itr_dict:
                         err_msg = "post {0}/{1} is lang_uniq, copy of it should not exist in _{2}_".format(name, post_name, itr_name)
@@ -530,7 +527,7 @@ def check_start_up_paths():
     except OSError as e:
         panic(e)
 
-def create_collects_path(tag_path, categ_path):
+def create_collects_path(TAG_PATH, categ_path):
     try:
         if not os.path.exists(tag_path):
             os.makedirs(tag_path)
