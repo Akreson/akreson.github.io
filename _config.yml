@@ -31,10 +31,10 @@ description: >- # used by seo meta and the atom feed
 url: 'https://Akreson.github.io'
 
 github:
-  username: github_username # change to your github username
+  username: Akreson # change to your github username
 
 twitter:
-  username: twitter_username # change to your twitter username
+  username: AlexRubble # change to your twitter username
 
 social:
   # Change to your full name.
@@ -43,8 +43,8 @@ social:
   email: 
   links:
     # The first element serves as the copyright owner's link
-    - https://twitter.com/username # change to your twitter homepage
-    - https://github.com/username # change to your github homepage
+    - https://twitter.com/AlexRubble # change to your twitter homepage
+    - https://github.com/Akreson # change to your github homepage
     # Uncomment below to add more social links
     # - https://www.facebook.com/username
     # - https://www.linkedin.com/in/username
@@ -82,7 +82,7 @@ theme_mode: # [light|dark]
 img_cdn:
 
 # the avatar on sidebar, support local or CORS resources
-avatar:
+avatar: /assets/img/avatar.png
 
 # boolean type, the global switch for TOC in posts.
 toc: true
