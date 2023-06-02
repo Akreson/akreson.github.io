@@ -3,7 +3,8 @@ import sys
 import datetime
 import math
 
-PAGES_PER_PAGE = 10
+# this script was made to serve my needs, parser for front matter isn't bullet proof
+# so it can not work for you style of front matter
 
 SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 POST_PATH = os.path.abspath(SCRIPT_PATH+"/../_posts")
@@ -640,8 +641,7 @@ def create_pages(posts_dict, pages_path, lang):
         else:
             has_next = 'false'
             next_path = '/'
-
-        has_next = 'true' if len(next_path) else 'false'        
+  
         page_str = PAGE_HEADER_TEMPLATE.format(i, 'true', prev_path, has_next, next_path)
         #print(pages_path, curr_file_path)
         page_file = open_file_write(pages_path, curr_page)
