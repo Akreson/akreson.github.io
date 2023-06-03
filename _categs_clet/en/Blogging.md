@@ -1,4 +1,0 @@
----
-title: Blogging
-category: Blogging
----
