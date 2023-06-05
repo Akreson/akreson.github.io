@@ -1,5 +1,5 @@
 ---
-title: "Entropy encoding from beginner to beginners - Part 1: Code Length"
+title: "Entropy coding by a beginner for beginners - Part 1: Code Length"
 date: 2023-06-03 00:00:00 +0200
 categories: [compression]
 tags: [code len, huffman]
@@ -21,13 +21,13 @@ Now let’s begin.
 
 When we using the Huffman for entropy encoding, in general, we can only represent probabilities that are equal to two to the negative power of two. What does it mean, and is it bad? Let’s briefly examine these questions.
 
-At start let’s look at the [Kraft–McMillan] inequality. It works for any B-ary system, but all the rest of formulas will assume binary system automatically.
+At start let’s look at the [Kraft–McMillan](https://en.wikipedia.org/wiki/Kraft%E2%80%93McMillan_inequality) inequality. It works for any B-ary system, but all the rest of formulas will assume binary system automatically.
 
 $$ \sum_{x \in S} \frac{1}{2^{l(x)}} \le 1 $$
 
 Here, **S** is set of our symbols or simply the alphabet, **x** is a symbol in this alphabet, and **l** is the length of code for a particular symbol. That is, $$S = \{x_0, x_1, x_2, \dots\}$$ and $\|C(x)\| = l(x)$. Accomplishing these conditions gives us the guarantee that we have codes for our symbols that we can later decode unambiguously. From this inequality, we can find formula for $l(x)$ of symbol.
 
-$$ p_i = \frac{1}{2^{l_i}}; \; 2^{l_i} = \frac{1}{p_i}; \; l_i = log_2 \frac{1}{p_i} \; або \; l_i = -log_2 \ p_i $$
+$$ p_i = \frac{1}{2^{l_i}}; \; 2^{l_i} = \frac{1}{p_i}; \; l_i = log_2 \frac{1}{p_i} \; or \; l_i = -log_2 \ p_i $$
 
 You can think of **p** as the probability that it generally is. Let’s consider an example where we have Huffman codes for some symbols.
 
@@ -59,7 +59,7 @@ $$ H_2 = -\sum_{} p_i * log_2 \ p_i $$
 
 In general case when we talk about entropy in computer science (and especially in information theory), we assume a base of 2. So we can just write $H$ instead of $H_2$. Usually, this is clear from context. From now on, I also will write just $H$. Second, why is it necessary to multiply the result of logarithm by the probability? By doing this, we weight the result of our logarithm. In this way if we would have $n$ symbols and all of them have same probability $(1/n)$, then our $H$ will be equal to $log_2 \ n$. For example, if we have 256 symbols and the probability of each one is 1/256, then $H = 8$ instead of 2048.
 
-As can see, the calculation of average code length for Huffman codes is closely related to entropy. This is because the former is an approximation to the latter and differs in that for entropy we use $-log_2\ p$. In principle, this seems logical, since for an event with a probability of 50% or 0.5, we need 1 bit,  that is, codes will be 0 and 1. But for an event with a probability of 0.9, by this logic, we would need roughly only 0.15 bit. Thus, sometimes you can hear that compression is close to the entropy or Shannon limit. At that time, data compression was literally just being born, and Huffman codes were a good approximation of entropy for textual data. We can check how much Huffman codes deviate from entropy in the following way:
+If you notice, the calculation of average code length for Huffman codes is kind of similar to entropy formula. This is because the former is an approximation to the latter and differs in that for entropy we use $-log_2\ p$. In principle, this seems logical, since for an event with a probability of 50% or 0.5, we need 1 bit,  that is, codes will be 0 and 1. But for an event with a probability of 0.9, by this logic, we would need roughly only 0.15 bit. Thus, sometimes you can hear that compression is close to the entropy or Shannon limit. At that time, data compression was literally just being born, and Huffman codes were a good approximation of entropy for textual data. We can check how much Huffman codes deviate from entropy in the following way:
 
 $$D = (L - H) / H$$
 
@@ -73,11 +73,11 @@ In this case, L = 1.25, H = 0.9, and D = 0.39 or 39%.
 
 The graphic above only shows the correspondence between code length and given probability, and it does not tell the whole story. By using Huffman for encoding, we “round up” our probability toward closest free probability of $2^{-n}$. That it, the larger our alphabet is, and/or the closer probability of each symbol will be to $2^{-n}$, the more optimal Huffman codes will be for this case (you can check [this](http://fastcompression.blogspot.com/2015/07/huffman-revisited-part-1.html) post of Yan Collet, author of [zstd](https://github.com/facebook/zstd), for some addition info about this).
 
-Let’s look at the last two examples for an alphabet of 5 symbols. In first case, let all symbols will have a probability of 0.2. The resulting Huffman codes would look like this (00, 10, 11, 010, 011). L = 2.4, H ≈ 2.32 and have D ≈ 3.45%. In second case, let’s take a probability distribution like (0.96, 0.1, 0.1, 0.1, 0.1). Then we will get codes like (0, 100, 101, 110, 111).  We have L  ≈ 1.08, H ≈ 0.32 D = 237.5%. In this case, we lose solid amount by giving probability of 0.96 a whole bit.
+Let’s look at the last two examples for an alphabet of 5 symbols. In first case, let all symbols will have a probability of 0.2. The resulting Huffman codes would look like this (00, 10, 11, 010, 011). L = 2.4, H ≈ 2.32 and have D ≈ 3.45%. In second case, let’s take a probability distribution like (0.96, 0.01, 0.01, 0.01, 0.01). Then we will get codes like (0, 100, 101, 110, 111).  We have L  ≈ 1.08, H ≈ 0.32 D = 237.5%. In this case, we lose solid amount by giving probability of 0.96 a whole bit.
 
 ## Conclusion
 
-By using Huffman, we can encode our probability only using discrete amount of bits. But at the same time decoding Huffman codes by using table method require very small amount of operation for decoding symbols. In addition, counting possibility for compact r[representation](http://cbloomrants.blogspot.com/2010/08/08-10-10-transmission-of-huffman-trees.html) of Huffman table, this method should not be neglected. It just serves as a possible alternative that you can chose from. We only looked at static probabilities for symbols because attempting to make Huffman adaptive that is, taking into account the statistics of the appearance of each symbols at time of the encoding process, would require rebuilding the codes tree and, as a consequence, would not allow us to use the table method for decoding. That, in turn, means that we lose the main advantage of Huffman.  For making our encoder adaptive, we have better options, and we will explore them in the next parts.
+By using Huffman, we can encode our probability only using discrete amount of bits. But at the same time decoding Huffman codes by using table method require very small amount of operation for decoding symbols. In addition, counting possibility for compact [representation](http://cbloomrants.blogspot.com/2010/08/08-10-10-transmission-of-huffman-trees.html) of Huffman table, this method should not be neglected. It just serves as a possible alternative that you can chose from. We only looked at static probabilities for symbols because attempting to make Huffman adaptive that is, taking into account the statistics of the appearance of each symbols at time of the encoding process, would require rebuilding the codes tree and, as a consequence, would not allow us to use the table method for decoding. That, in turn, means that we lose the main advantage of Huffman.  For making our encoder adaptive, we have better options, and we will explore them in the next parts.
 
 ## References
 
