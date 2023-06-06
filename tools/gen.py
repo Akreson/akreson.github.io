@@ -6,6 +6,7 @@ import math
 # this script was made to serve my needs, parser for front matter isn't bullet proof
 # so it can not work for you style of front matter
 
+PAGES_PER_PAGE = 10
 SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 POST_PATH = os.path.abspath(SCRIPT_PATH+"/../_posts")
 CATEG_PATH = os.path.abspath(SCRIPT_PATH+"/../_categs_clet")
@@ -70,6 +71,7 @@ class Field:
     DATE = "date"
     PIN = "pin"
     LANG_UNIQ = "languniq"
+    MATH = "math"
 
 class Token:
     def __init__(self):
@@ -84,7 +86,7 @@ class ParseRange:
     
     def finish(self):
         result = False
-        if self.at == self.end:
+        if self.at >= self.end:
             result = True
         return result
 
@@ -129,6 +131,8 @@ class PostsData:
             post_data[Field.TAG_ARR] = [post_data[Field.TAG][0]]
             self.agg_tags[post_data[Field.TAG_ARR][0]] = 0
             del post_data[Field.TAG]
+        else:
+            panic("no tags specified in {0}/{1}".format(path, name))
 
         if Field.CATEG in post_data and Field.CATEG_ARR in post_data:
             panic("category and categories specified in {0}/{1}".format(path, name))
@@ -139,6 +143,11 @@ class PostsData:
             post_data[Field.CATEG_ARR] = [post_data[Field.CATEG][0]]
             self.agg_categ[post_data[Field.CATEG_ARR][0]] = 0
             del post_data[Field.CATEG]
+        else:
+            panic("no categories specified in {0}/{1}".format(path, name))
+
+        if Field.DATE not in post_data:
+            panic("no data specified in {0}/{1}".format(path, name))
 
         self.posts[name] = post_data
 
@@ -330,17 +339,6 @@ def get_bool_status(data, parse_range, err_path):
     parse_range.at = eol_index
     return result
 
-
-PARSE_FIELD_LIST = {
-    Field.TAG : get_name_field,
-    Field.TAG_ARR : get_list_name_field,
-    Field.CATEG : get_name_field,
-    Field.CATEG_ARR : get_list_name_field,
-    Field.DATE : get_data_str,
-    Field.PIN : get_bool_status,
-    Field.LANG_UNIQ : get_bool_status
-}
-
 def is_whitespace(byte):
     result = False
     if byte in WHITE_SPACE:
@@ -394,7 +392,7 @@ def skip_to_next_line_itr(itr, data, size):
     return itr
 
 def skip_to_next_line(data, parse_range):
-    parse_range.at = skip_to_next_line_itr(parse_range.at, data, parse_range.end - parse_range.start)
+    parse_range.at = skip_to_next_line_itr(parse_range.at, data, parse_range.end)
 
 def find_parse_range(data, size):
     result = [0, 0]
@@ -428,7 +426,7 @@ def get_token(data, parse_range):
         skip_whitespace(data, parse_range)
 
         start = parse_range.at
-        while is_alpha(data[parse_range.at]):
+        while is_alpha(data[parse_range.at]) or (data[parse_range.at] == ord('_')):
             parse_range.at += 1
         end = parse_range.at
         
@@ -437,6 +435,16 @@ def get_token(data, parse_range):
 
     return result_token
 
+PARSE_FIELD_LIST = {
+    Field.TAG : get_name_field,
+    Field.TAG_ARR : get_list_name_field,
+    Field.CATEG : get_name_field,
+    Field.CATEG_ARR : get_list_name_field,
+    Field.DATE : get_data_str,
+    Field.PIN : get_bool_status,
+    Field.LANG_UNIQ : get_bool_status,
+    Field.MATH : get_bool_status
+}
 
 def parse_post_params(data, size, err_path):
     result_post_params = dict()
@@ -460,7 +468,7 @@ def parse_post_params(data, size, err_path):
                     else:
                         skip_to_next_line(data, parse_range)
                 else:
-                    panic("{0}: unexpected token after {1} in the front matter. Please change the front metter or modify parse script".format(err_path, token.str))
+                    panic("{0}: unexpected token after \"{1}\" in the front matter. Please change the front matter or modify parse script".format(err_path, token.str))
             elif token.type == TokenType.COMMENT or token.type == TokenType.DASH:
                 skip_to_next_line(data, parse_range)
             elif token.type == TokenType.END_OF_STREAM:
@@ -571,10 +579,24 @@ def check_posts_lang_copy(posts_folders, err_list):
                             err_msg = "post {0} in _{1}_ and _{2}_ should have same date {3} - {4}".format(post_name, name, itr_name, str(post_lang_data[Field.DATE]), str(itr_post_data[Field.DATE]))
                             err_list.append(err_msg)
                         
-                        if post_lang_data[Field.PIN] != itr_post_data[Field.PIN]:
-                            err_msg = "post {0} in _{1}_ and _{2}_ should be pinned".format(post_name, name, itr_name)
+                        err_msg = "post {0} in _{1}_ and _{2}_ should be pinned".format(post_name, name, itr_name)
+                        post_has_pin = Field.PIN in post_lang_data
+                        itr_has_pin = Field.PIN in itr_post_data
+                        if post_has_pin and itr_has_pin:
+                            if post_lang_data[Field.PIN] != itr_post_data[Field.PIN]:
+                                err_list.append(err_msg)
+                        elif post_has_pin or itr_has_pin:
                             err_list.append(err_msg)
                         
+                        err_msg = "post {0} in _{1}_ and _{2}_ should have same \"math\" value".format(post_name, name, itr_name)
+                        post_has_math = Field.MATH in post_lang_data
+                        itr_has_math = Field.MATH in itr_post_data
+                        if post_has_math and itr_has_math:
+                            if post_lang_data[Field.MATH] != itr_post_data[Field.MATH]:
+                                err_list.append(err_msg)
+                        elif post_has_math or itr_has_math:
+                            err_list.append(err_msg)
+
                         check_posts_filed(name, post_lang_data, itr_name, itr_post_data, post_name, Field.CATEG_ARR, err_list)
                         check_posts_filed(name, post_lang_data, itr_name, itr_post_data, post_name, Field.TAG_ARR, err_list)
                         
@@ -618,6 +640,14 @@ def open_file_write(folder_path, filename):
     return file_handle
 
 def create_collect(name_dict, path, header_template):
+    collect_dir = os.scandir(path)
+    for item in collect_dir:
+        if item.is_file():
+            item_check_name = item.name.split(".")[0]
+            if item_check_name not in name_dict:
+                os.remove(os.path.join(path, item.name))
+    collect_dir.close()
+
     for name in name_dict:
         file_handle = open_file_write(path, name+'.md')
         file_handle.write(header_template.format(name))
