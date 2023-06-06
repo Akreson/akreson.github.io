@@ -22,10 +22,10 @@ timezone: Europe/Kiev
 
 title: Akreson # the main title
 
-tagline: A text-focused Jekyll theme # it will display as the sub-title
+tagline: Blog for those who interested in programming # it will display as the sub-title
 
 description: >- # used by seo meta and the atom feed
-  A minimal, responsive and feature-rich Jekyll theme for technical writing.
+  Blog about programming, C++, algorithm, low-level stuff.
 
 # fill in the protocol & hostname for your site, e.g., 'https://username.github.io'
 url: 'https://Akreson.github.io'
