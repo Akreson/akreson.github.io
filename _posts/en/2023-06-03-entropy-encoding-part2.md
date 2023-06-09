@@ -80,8 +80,8 @@ That is, by using 32 bits, we can choose our values as 17 and 15 bits. But, to m
 static constexpr u32 CODE_BITS = 16;
 static constexpr u32 FREQ_BITS = 14;
 static constexpr u32 FREQ_VALUE_BITS = 14;
+static constexpr u32 PROB_MAX_VALUE = (1 << FREQ_BITS);
 static constexpr u32 CODE_MAX_VALUE = (1 << CODE_BITS) - 1;
-static constexpr u32 PROB_MAX_VALUE = (1 << FREQ_BITS) - 1;
 static constexpr u32 FREQ_MAX_VALUE = (1 << FREQ_VALUE_BITS);
 
 struct prob
@@ -335,9 +335,9 @@ void ArithDecoder::updateDecodeRange(prob Prob)
 
 That’s how AC look like. The main advantage of this method of encoding entropy is that we don’t have a hard restriction on the source from which we take our probability to encode, namely the CDF value. Only that CDF[Total] must not exceed `FREQ_BITS`. This allows us to change the probabilities during the encoding/decoding process, which means that we can make our probability estimates adaptive. The encoder by itself only encode the ranges and their interpretations is our business.
 
-Below is a comparison of compression (if we take the count of occurrence of each individual byte from the entire file) between a simple Huffman implementation with a maximum code length of 12 bits and the above AC with a maximum CDF value of 2^14 which was optimally normalized. We haven’t looked at how we encode values with AC and how to do normalization for CDF yet, so for now, it’s enough to understand that. if we try to map a frequency counts for bytes whose total sum is greater than maximum value that can hold CDF, there will be variation in who should take shorter codes and who should take longer codes. The optimal method will give CDF values that result in the smallest compression. (c/s means clock/symbol).
+Below is a comparison of compression (if we take the count of occurrence of each individual byte from the entire file) between a simple Huffman implementation with a maximum code length of 12 bits and the above AC with a maximum CDF value of 2^14 which was optimally normalized. We haven’t looked at how we encode values with AC and how to do normalization for CDF yet, so for now, it’s enough to understand that. if we try to map a frequency counts for bytes whose total sum is greater than maximum value that can hold CDF, there will be variation in who should take shorter codes and who should take longer codes. The optimal method will give CDF values that result in the smallest compression. Decoding was done without auxiliary data struct. Also if we know that CDF[Total] == 2^n we can replace some divisions with shifts, I didn't do that for test.(c/s means clock/symbol).
 
-*Result for Huffman*
+*Result for AC*
 
 | name  |   H   | file size | compr. size |  bpb  |       enc c/s      |      dec c/s       |
 | :---- | :---- | :-------- | :---------- | :---- | :----------------: | :----------------: |
@@ -346,7 +346,7 @@ Below is a comparison of compression (if we take the count of occurrence of each
 | obj2  | 6.26  |    246814 | 193160      | 6.26  | 297.3 (12.5 MiB/s) | 339.6 (10.9 MiB/s) |
 | pic   | 1.21  |    513216 | 77951       | 1.215 | 81.3 (45.7 MiB/s)  | 110.2 (33.7 MiB/s) |
 
-*Result for AC*
+*Result for Huffman*
 
 | name  |   H   | file size | compr. size |  bpb  |       enc c/s      |      dec c/s       |
 | :---- | :---- | :-------- | :---------- | :---- | :----------------: | :----------------: |
@@ -380,7 +380,7 @@ To make this work, we also need to change values for `CODE_BITS` і `FREQ_BITS`.
 | obj2  | 6.26  |    246814 | 193202      | 6.26  | 283,1 (13.1 MiB/s) | 278.2 (13.3 MiB/s) |
 | pic   | 1.21  |    513216 | 78031       | 1.215 | 84,4 (44 MiB/s)    | 102,5 (36.2 MiB/s) |
 
-Despite the decrease in accuracy, the result did not get much worse. The reduction of division operations did not produce a "wow effect" in terms of encoding speed. The benchmark result was at an level of error, so I don't want to fool you and choose best one. Interestingly, although the number of divisions for decoding remained the same, it seems that the dependency graph of instructions is better handled by my CPU in this way. Several MiB/s is of course cool, but it certainly would be better if it was more. It's not surprising that the encoding process is so tight. It might be fine if we do some simple loop during normalization, but only branch miss are nearly 30% and greater (depending on data entropy). The ability to set `CODE_BITS` to 31 bits, which will allow us to normalize byte at a time instead of bit by bit, is essentially the main advantage of changing the division order. Shifting a whole byte at a time with 16 bits `CODE_BITS`  means that we will be waiting until the 8 MSB bits became identical, and as result, the precision of the range whould shring to 8 bits, which in turn adds constraing to the max value for CDF. But what is more important is that such normalizations scheme will not work for byte at a time. The canonical implementation for multi character (since binary came before) AC with byte at a time normalization is probably [Michael Schindler](http://www.compressconsult.com/rangecoder/) version. You can read about how and why it works starting from [this](http://cbloomrants.blogspot.com/2008/10/10-05-08-5.html) post by Charles Bloom. You just won’t find anywhere else to read about it, at least I didn’t. If you’re new to compression and haven’t come across Charles’s blog, it’s one of the main source of information about compression on the internet at all, by the way.
+Despite the decrease in accuracy, the result did not get much worse. The reduction of division operations did not produce a "wow effect" in terms of encoding speed. The benchmark result was at an level of error, so I don't want to fool you and choose best one. Interestingly, although the number of divisions for decoding remained the same, it seems that the dependency graph of instructions is better handled by my CPU in this way (actually the result varies between compilers). Several MiB/s is of course cool, but it certainly would be better if it was more. It's not surprising that the encoding process is so tight. It might be fine if we do some simple loop during normalization, but only branch miss are nearly 30% and greater (depending on data entropy). The ability to set `CODE_BITS` to 31 bits, which will allow us to normalize byte at a time instead of bit by bit, is essentially the main advantage of changing the division order. Shifting a whole byte at a time with 16 bits `CODE_BITS`  means that we will be waiting until the 8 MSB bits became identical, and as result, the precision of the range whould shring to 8 bits, which in turn adds constraing to the max value for CDF. But what is more important is that such normalizations scheme will not work for byte at a time. The canonical implementation for multi character (since binary came before) AC with byte at a time normalization is probably [Michael Schindler](http://www.compressconsult.com/rangecoder/) version. You can read about how and why it works starting from [this](http://cbloomrants.blogspot.com/2008/10/10-05-08-5.html) post by Charles Bloom. You just won’t find anywhere else to read about it, at least I didn’t. If you’re new to compression and haven’t come across Charles’s blog, it’s one of the main source of information about compression on the internet at all, by the way.
 
 In the next parts, I will be using the version of AC that I showed, so keep that it in mind. If I show some benchmark then it is very likely that later I will add the result for the byte wise normalization version of AC bellow. If my explanation will be useful for people who are just getting into compression, then I’ll try to make a post like this for AC with byte wise normalization.
 

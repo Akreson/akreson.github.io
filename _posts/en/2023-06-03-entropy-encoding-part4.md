@@ -13,7 +13,7 @@ In order to have some context for what we will be doing in this part, let’s co
 
 Similar to `SimpleOrder1AC`, each CM will store a counter for every symbol encountered in that particular context. Based on these counters, we will estimate the probability of the symbol we are trying to encode. Since contexts are created dynamically, we will store all contexts and their corresponding data in a pre-allocated fixed-size memory pool. This helps limit the maximum amount of memory that PPM can use. To fit as many contexts as possible for each of them we only store the symbols that have appeared in it.
 
-When encoding symbols, we start by attempting to encode them in the highest available CM, as we can assume that the accumulated statistic in those contexts most relevant for us, although not necessarily. If we encounter a symbol that has not appeared in the current context or if the context does not exist yet, we descend to a lower-order child context until we find a context where we can encode the current symbol. For example, if we have two context CM(2) \<oq\> and \<kq\>, they will share a common lower-order child context CM(1) \<q\>. If we find a context but still need to descend to a child context (due to a symbol miss), we must indicate this. This is necessary because we encode our symbol in context that is different from the current context. While encoding, it is obvious to us that the current context doesn’t have the required symbol, but during decoding, we only receive CDF values that are between CDF[low] and CDF[high] of the encoded symbol. We need decode the received value unambiguously, and for this, we must be in the right context at that time. To signal to the decoder that it needs to descend to the child context, we use a special symbol whose value doesn’t  belong to any of the characters in our alphabet. This symbol is called an escape symbol (ESC).
+When encoding symbols, we start by attempting to encode them in the highest available CM, as we can assume that the accumulated statistic in those contexts most relevant for us, although not necessarily. If we encounter a symbol that has not appeared in the current context or if the context does not exist yet, we descend to a lower-order child context until we find a context where we can encode the current symbol. For example, if we have two context CM(2) \<oq\> and \<kq\>, they will share a common lower-order child context CM(1) \<q\>. If we find a context but still need to descend to a child context (due to a symbol miss), we must indicate this. This is necessary because we encode our symbol in context that is different from the current context. While encoding, it is obvious to us that the current context doesn’t have the required symbol, but during decoding, we only receive CDF values that are between CDF[low] and CDF[high] of the encoded symbol. We need decode the received value unambiguously, and for this, we must be in the right context at that time. To signal to the decoder that it needs to descend to the child context, we use a special symbol whose value doesn’t  belong to any of the symbols in our alphabet. This symbol is called an escape symbol (ESC).
 
 The first context that we can have is CM(-1), where all symbols will have equal probability and won’t be changed after encoding from it. In this case, in CM(0), we can store only the symbols that appear in it. Similarly, we can initialize all symbols for CM(0) at beginning and use them. If we encode ESC in the first context (CM(-1) or CM(0)), we assume that it denotes the end-of-stream.
 
@@ -633,7 +633,7 @@ void update(u32 Symbol)
         Prev = ContextAt;
     }
 
-    ...//reset if memory not enaugth
+    ...//reset if memory not enough
 }
 ```
 
@@ -671,20 +671,18 @@ void update(u32 Symbol)
 
             ...// construct non exist branch of context
             ...// init context for wich we build this path
-
         }
         else
         {
             Assert(ContextAt->Data);
             if (!addSymbol(ContextAt, Symbol)) break;
         }
-        
 
         ContextAt->Prev = Prev;
         Prev = ContextAt;
     }
 
-    ...//reset if memory not enaugth
+    ...//reset if memory not enough
 }
 ```
 
@@ -958,7 +956,7 @@ We do the same thing as in `SimpleOrder1AC::getSymbolFromFreq()`, but now we als
 _shown approach for poor context data_
 
 ![](/assets/img/post/etr-enc-4/utill2.png)
-_decriped approach for poor context data_
+_described approach for poor context data_
 
 Here “Cycles of N Ports” indicates, as Intel states in the tooltip, the fraction of time when CPU perform N uops in one cycle, rather than the specific ports on which the uop instruction are executed, which you could see [here](https://uops.info/table.html). A classic illustration of CPU’s OOO. Maybe on older CPUs, this approach would have a greater impact on executing speed. Not sure which method is best for PPM style of data, just decided make measure from curiosity reason and show it to you.
 
@@ -1085,7 +1083,7 @@ b32 addSymbol(context* Context, u32 Symbol)
         Data->Next = nullptr;
 
         Context->TotalFreq += 1;
-        Context->EscapeFreq += 1; // now increment
+        Context->EscapeFreq += 1; // now incrementing
 
         Result = true;
     }

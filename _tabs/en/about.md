@@ -4,5 +4,6 @@ icon: fas fa-info-circle
 order: 4
 ---
 
-> Add Markdown syntax content to file `_tabs/about.md`{: .filepath } and it will show up on this page.
-{: .prompt-tip }
+Started learning C because it looks how I imagined programming when I was a child. Like the moment of using created abstractions (if they are useful).
+
+Kind of hate transliteration rules. My surname pronounce as "Boot" or "Bout" but not "But", funny coincidences.
