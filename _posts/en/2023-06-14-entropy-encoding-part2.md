@@ -384,6 +384,8 @@ Despite the decrease in accuracy, the result did not get much worse. The reducti
 
 In the next parts, I will be using the version of AC that I showed, so keep that it in mind. If I show some benchmark then it is very likely that later I will add the result for the byte wise normalization version of AC bellow. If my explanation will be useful for people who are just getting into compression, then I’ll try to make a post like this for AC with byte wise normalization.
 
+[Source code](https://github.com/Akreson/compression_tests/tree/51fb96d6d2fbc20a4e38a992899ba49266db09b8) for this part.
+
 ## References
 
 \[1\] Arithmetic coding for data compression [https://web.stanford.edu/class/ee398a/handouts/papers/WittenACM87ArithmCoding.pdf](https://web.stanford.edu/class/ee398a/handouts/papers/WittenACM87ArithmCoding.pdf)

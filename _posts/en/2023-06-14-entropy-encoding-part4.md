@@ -1106,6 +1106,8 @@ Nice. We cannot ignore the encoding of ESC and need to find a balance somehow.  
 
 So we have finished the introduction to PPM. The main drawback at the moment is the context search process. Most of the time is spent in the `findSymbolIndex()` function. In the next part, we will see how it can be removed entirely.
 
+[Source code](https://github.com/Akreson/compression_tests/tree/b563af268dc87ff93cbe77b1f0817c2a25f8b971) for this part.
+
 ## References
 
 \[1\] Data Compression Using Adaptive Coding and Partial String Matching [https://www.researchgate.net/publication/2475970_Data_Compression_Using_Adaptive_Coding_and_Partial_String_Matching](https://www.researchgate.net/publication/2475970_Data_Compression_Using_Adaptive_Coding_and_Partial_String_Matching)

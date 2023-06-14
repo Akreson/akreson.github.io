@@ -427,3 +427,5 @@ if (MatchSymbol->Freq > MAX_FREQ)
 | Intel.pdf | 7.955 | 26192768  | 25913696    | 7.914 | 22067691.4| 3844137.5  |
 
 From one point of view, if we look at `Sym` column, we can see that in some cases we really become spend fewer bytes for symbol encoding. But at the same time, ESC encoding becomes more expensive. Not to mention that the `pic` became almost 2 times larger! If we would to call `rescale()` at `TotalFreq >= 16384`, the result would not be better. At this stage, this change has not provided any benefits. When using PPM, encoding ESC symbol becomes somewhat of an obstacle in achieving better compression. We will see what can be done with this in the next part.
+
+[Source code](https://github.com/Akreson/compression_tests/tree/eca3e71b2001cf7143cd6bb59c33d670a7e20a3c) for this part.

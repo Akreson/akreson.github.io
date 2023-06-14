@@ -810,6 +810,8 @@ Much nicer! As seen the main part of compression was made in the previous part, 
 
 It’s not surprise that such an advanced LZ coder outperformed our simple 1k lines PPM model in all aspects, but since book1 fits very well into PPM’s data type, it compressed it better by 0.48 bpb than LZMA.
 
+[Source code](https://github.com/Akreson/compression_tests/tree/4aba6b0aceff875cbe79c29eeb88c2b16c770d0d) for this part.
+
 ## References
 
 \[1\] PPMZ [https://www.cbloom.com/src/ppmz.html](https://www.cbloom.com/src/ppmz.html)
