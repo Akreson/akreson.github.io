@@ -8,7 +8,7 @@ math: true
 
 ## Introduction
 
-Once upon a time, when I just got introduced to C, one of my initial projects that I choose to made was a steganography program. The idea didn’t seem to difficult. At that time, I was barely assemble lines of code tohether and just didn’t think of searching for libraries to encode and decode .png and .jpeg files (I wasn’t even aware of the existence of [stb](https://github.com/nothings/stb) libraries back then). However, thanks to that, I got introduced to compression right from the start. I tried something, didn’t quit grasp fully what I did, and moved on to something else. Years later, I decided to revisit this topic because the concept of “compressing” information intrigued me since that time. But this time, I decided to document it because, as it is said:
+Once upon a time, when I just got introduced to C, one of my initial projects that I choose to made was a steganography program. The idea didn’t seem to difficult. At that time, I was barely assemble lines of code together and just didn’t think of searching for libraries to encode and decode .png and .jpeg files (I wasn’t even aware of the existence of [stb](https://github.com/nothings/stb) libraries back then). However, thanks to that, I got introduced to compression right from the start. I tried something, didn’t quit grasp fully what I did, and moved on to something else. Years later, I decided to revisit this topic because the concept of “compressing” information intrigued me since that time. But this time, I decided to document it because, as it is said:
 
 > "The best way to learn is to teach." — Frank Oppenheimer
 
