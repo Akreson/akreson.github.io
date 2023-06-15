@@ -22,7 +22,7 @@ timezone: Europe/Kiev
 
 title: Akreson # the main title
 
-tagline: Blog for those who interested in programming # it will display as the sub-title
+tagline: Blog for programmers # it will display as the sub-title
 
 description: >- # used by seo meta and the atom feed
   Blog about programming, C++, algorithm, low-level stuff.
