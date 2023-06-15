@@ -359,7 +359,7 @@ For most files, the difference not that big, if we simply take the frequency of 
 
 ## Rearranging division
 
-We can do small rearrangement of math for reduce the divide operation for encoding to one (and if change API for decoding also, but I haven’t done this), rewriting range scaling in this way (all changes look in this commit):
+We can do small rearrangement of math for reduce the amount of division operation for encoding to one (and if change API for decoding also, but I haven’t done this), rewriting range scaling in this way:
 
 ```
 void encode(prob Prob)
