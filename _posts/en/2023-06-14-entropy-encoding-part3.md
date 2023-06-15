@@ -107,8 +107,6 @@ public:
 }
 ```
 
-Оскільки ми не починаємо кодування доки не зберемо статистику про появу символів, ми встановлюємо наше CDF у 0. Я не використовую тут звичайний memset, тому, що, по-перше, мені потрібно було оперувати значеннями більше ніж в 1 байт, а, по-друге, в мене іноді підгорає, коли я та змінюю тип даних тощо, а змінити memset забуваю. Тому чисто для себе використовую версію де можу жорстко задати тип для *dest_ptr и value, разом із -Wconversion це іноді зберігає пару нервових клітин. Сподіваюсь на розуміння.
-
 Since we don’t start encoding before collecting statistics of symbols appearing, we set our CDF to 0. I don’t use default memset() here because I needed to use a value bigger that 1 byte, and also because I get little annoyed when I change data type and forget to change memset() after. So, just for myself, this version allows me to strictly set data type of *dest_ptr and value, with something like -Wconverision this sometimes just save me a pair of nerve cells. Hope for your understanding.
 
 We begin `update()` by incrementing all CDF values starting from з `Symbol + 1` since each CDF value is sum of all previous frequency value.
