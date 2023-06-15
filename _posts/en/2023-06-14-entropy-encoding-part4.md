@@ -1036,7 +1036,7 @@ void encodeEndOfStream(ArithEncoder& Encoder)
 }
 ```
 
-The idea is to generate a sequence of ESC symbols from the last context that the decoder has up to CM(-1). Since in the context search loop, non-existing contexts do not generate an ESC symbol, we are looking for the first complete branch of context and descending to the bottom. In this sequence, only CM(-1) should have EscContext->Prev == nullptr.
+The idea is to generate a sequence of ESC symbols from the last context that the decoder has up to CM(-1). Since in the context search loop, non-existing contexts do not generate an ESC symbol, we are looking for the first complete branch of context and descending to the bottom. In this sequence, only CM(-1) should have `EscContext->Prev == nullptr`.
 
 ## Result
 
@@ -1102,7 +1102,7 @@ Checking result:
 | pic       | 1.21  |    513216 | 52486       | 0.818 | 45292.7   | 7141.5     |
 | Intel.pdf | 7.955 | 26192768  | 25331611    | 7.737 | 22122485.9| 3207770.4  |
 
-Nice. We cannot ignore the encoding of ESC and need to find a balance somehow.  You can see the complete code [here]().
+Nice. We cannot ignore the encoding of ESC and need to find a balance somehow.
 
 So we have finished the introduction to PPM. The main drawback at the moment is the context search process. Most of the time is spent in the `findSymbolIndex()` function. In the next part, we will see how it can be removed entirely.
 

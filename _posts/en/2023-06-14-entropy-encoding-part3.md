@@ -152,7 +152,7 @@ void BasicACByteModel::update(u32 Symbol)
 }
 ```
 
-CDF[0] always will be 0, so we don’t touch it. After such operation can be the case when difference between CDF[i] and CDF[I - 1] will be equal to 0, while before the difference was 1. Therefore the check `Freq <= PrevFreq` is needed.
+CDF[0] always will be 0, so we don’t touch it. After such operation can be the case when difference between CDF[i] and CDF[i - 1] will be equal to 0, while before the difference was 1. Therefore the check `Freq <= PrevFreq` is needed.
 
 In this normalization scheme we guarantee that each symbol can be encoded, even if it didn’t appear earlier. This not cool of course, because we spend CDF range for these symbols and as a consequence, reduce the possible CDF range for symbols that really need it. Since we already store our values as CDF, we can get our range using symbol directly.
 

@@ -255,7 +255,7 @@ u8 SEEState:getBinMean(u16 Scale)
 }
 ```
 
-We calculate the average value of Scale / TextCount, where TestCount is fixed and is equal the power of two, so we can replace divide with a bitwise shift. Adding `1 << (Shift - Round)`, as I understand is for rounding up value due to carry propagation. For example:
+We calculate the average value of Scale / TestCount, where TestCount is fixed and is equal the power of two, so we can replace divide with a bitwise shift. Adding `1 << (Shift - Round)`, as I understand is for rounding up value due to carry propagation. For example:
 
 ```TEXT
 0b101100 >> 4 = 0b10
