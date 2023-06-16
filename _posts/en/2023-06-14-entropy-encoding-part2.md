@@ -119,7 +119,7 @@ The calculation of the new ranges looks almost the same as in the formula above.
 
 ### Normalization
 
-The next step is normalization. As soon as we change our low high range, all subsequent ranges will stay inside the previous one. This mean that if our first range become e.g. 0.1– 0.4, then values beyond this range will never be used. In the context of a fixed point, this means that these are bits that will never change in subsequent calls, so we can write them down. If value of hi less then 0.5, then it will never get greater than that and we can write 0 to the output stream. If the value of lo gets greater then 0.5 for same reason write 1.
+The next step is normalization. As soon as we change our low high range, all subsequent ranges will stay inside the previous one. This mean that if our first range become e.g. 0.1– 0.4, then values beyond this range will never be used. In the context of a fixed point, this means that these are bits that will never change in subsequent calls, so we can write them down. If value of `hi` less then 0.5, then it will never get greater than that and we can write 0 to the output stream. If the value of `lo` gets greater then 0.5 for same reason write 1.
 
 ![](/assets/img/post/etr-enc-2/border1.png)
 
@@ -251,7 +251,7 @@ class ArithDecoder
 }
 ```
 
-Instead of `PendingBits`, we have code where we store bits that we took from the encoded stream. So, first, we initialize our code variable to start the decoding process like this.
+Instead of `PendingBits`, we have `code` where we store bits that we took from the encoded stream. So, first, we initialize our `code` variable to start the decoding process like this.
 
 ```
 ArithDecoder(ByteVec& InputBuffer): BytesIn(InputBuffer)
@@ -293,7 +293,7 @@ If the range on which we divide is even one less that the range of our CDF, at o
 
 ### Normalization
 
-Updating the range looks nearly the same, only that now we have a code for which we should do the same operation as for **high** and **low**, since normalization now signals to us when we should grab new bits from encoded stream.
+Updating the range looks nearly the same, only that now we have a `code` for which we should do the same operation as for **high** and **low**, since normalization now signals to us when we should grab new bits from encoded stream.
 
 ```
 void ArithDecoder::updateDecodeRange(prob Prob)

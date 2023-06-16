@@ -9,7 +9,7 @@ tags: [arithmetic coding, compression model, PPM]
 
 For extending the idea of context modeling shown in `SimpleOrder1AC`, we don’t need to invent anything. It was already done for us back in 1984 by the authors who laid down the idea of the PPM (Prediction by Partial Matching) algorithm [1].
 
-In order to have some context for what we will be doing in this part, let’s consider what PPM represents. We will be discussing finite-context modeling, which means our model will hold maximum of Order-N context, where N we set as parameter at initialization of the model. As a quick reminder, Order-N context means number of preceding symbols that we have processed, which form the context for encoding the current symbol. In the case of SimpleOrder1AC, the context for the current symbol was formed by only one preceding symbol. That is, we have model and contexts of this model (CM). For each context from 0 to the N-th order that we encounter, we will create a CM of that order (the order of particular context will be denoted as CM(k)).
+In order to have some context for what we will be doing in this part, let’s consider what PPM represents. We will be discussing finite-context modeling, which means our model will hold maximum of Order-N context, where N we set as parameter at initialization of the model. As a quick reminder, Order-N context means number of preceding symbols that we have processed, which form the context for encoding the current symbol. In the case of `SimpleOrder1AC`, the context for the current symbol was formed by only one preceding symbol. That is, we have model and contexts of this model (CM). For each context from 0 to the N-th order that we encounter, we will create a CM of that order (the order of particular context will be denoted as CM(k)).
 
 Similar to `SimpleOrder1AC`, each CM will store a counter for every symbol encountered in that particular context. Based on these counters, we will estimate the probability of the symbol we are trying to encode. Since contexts are created dynamically, we will store all contexts and their corresponding data in a pre-allocated fixed-size memory pool. This helps limit the maximum amount of memory that PPM can use. To fit as many contexts as possible for each of them we only store the symbols that have appeared in it.
 
@@ -158,7 +158,7 @@ void reset()
 }
 ```
 
-This means that in general, it is necessary to check every allocation even during execution of `initModel()`, or at least set a minimum memory pool size, but I didn’t do it because this is just test code. The struct for context_data_excl this is an array in which we mark the presence of those symbols that we saw in parent context while we go down through child contexts.
+This means that in general, it is necessary to check every allocation even during execution of `initModel()`, or at least set a minimum memory pool size, but I didn’t do it because this is just test code. The struct for `context_data_excl` this is an array in which we mark the presence of those symbols that we saw in parent context while we go down through child contexts.
 
 ```
 struct context_data_excl
@@ -289,7 +289,7 @@ symbol_search_result findSymbolIndex(context* Context, u32 Symbol)
 
 After that, we can check if this symbol has a pointer to the next context or not. Saving `CurrContext` and `LookAtOrder` in the result is also needed for execution of `update()` so that we can know from where to what point is need to complete the context. In the case when `CurrMaxOrder != LookAtOrder`, the value of `SymbolMiss` signals that we have a symbol miss on some branch during the context search process, and it’s not related to the miss of the actual symbol that we are looking for.
 
-Up to this point, I have mentioned `update()` function for several times but haven’t explained it yet. This may have left some aspects vague for you, but please bear with me because understanding what happens during the lookup and how we fill the ContextStack, which `update()` relies on, will make it easier to comprehend what's going on inside it.
+Up to this point, I have mentioned `update()` function for several times but haven’t explained it yet. This may have left some aspects vague for you, but please bear with me because understanding what happens during the lookup and how we fill the `ContextStack`, which `update()` relies on, will make it easier to comprehend what's going on inside it.
 
 Let’s assume that we have found the context that we need. Now we can try to encode the symbol if it is present in the context or encode ESC otherwise.
 
@@ -334,7 +334,7 @@ void encode(ArithEncoder& Encoder, u32 Symbol)
 }
 ```
 
-The `encodeSymbol()` function is a wrapper that return `true` or `false` depending on whether the symbol was encoded or ESC. In the first case, we finish our task and can exit the loop, saving the context we used in LastUsed which will be needed in `update()`. If we were unlucky and had to encode ESC inside `encodeSymbol()`, we save the pointer to the child context and start the search again. The last step before searching in the child context is to mask all the symbols that we have seen.
+The `encodeSymbol()` function is a wrapper that return `true` or `false` depending on whether the symbol was encoded or ESC. In the first case, we finish our task and can exit the loop, saving the context we used in `LastUsed` which will be needed in `update()`. If we were unlucky and had to encode ESC inside `encodeSymbol()`, we save the pointer to the child context and start the search again. The last step before searching in the child context is to mask all the symbols that we have seen.
 
 ```
 void updateExclusionData(context* Context)
@@ -576,7 +576,7 @@ void update(u32 Symbol)
 
 Let’s consider this by example. Assuming that the maximum context depth is 3. While searching for CM(3) \<abc\>, we discovered that the branch for this context starting from first symbol (‘a’) is missing. We saved this search result in `ContextStack[0]`. After that we couldn't find child CM(2) \<bc\> for the same reason and saved it in `ContextStack[1]`. However, CM(1) \<c\> is present but we couldn't find the symbol that we needed inside it, so it also goes to `update()` in `ContextStack[2]`.
 
-At the time of executing `update()`, we start building context from the lowest order CM, which is currently CM(1) \<c\>. We simply need to add the symbol to it as indicated by `Update->IsNotComplete == false`, and save it as Prev. This allows us set it as the child context for the next CM(2) \<bc\>. It’s possible that you might be confused with all these connections between contexts, as I was too. It may not be obvious why we can’t just construct CM(3) \<abc\> and designate each preceding context as child. We can’t do this because in this implementation, each branch of the context is represented is some sort as chain of parent contexts and child context (as I said at the beginning of this post “child” and “parent” is kind of wrong naming for this).
+At the time of executing `update()`, we start building context from the lowest order CM, which is currently CM(1) \<c\>. We simply need to add the symbol to it as indicated by `Update->IsNotComplete == false`, and save it as `Prev`. This allows us set it as the child context for the next CM(2) \<bc\>. It’s possible that you might be confused with all these connections between contexts, as I was too. It may not be obvious why we can’t just construct CM(3) \<abc\> and designate each preceding context as child. We can’t do this because in this implementation, each branch of the context is represented is some sort as chain of parent contexts and child context (as I said at the beginning of this post “child” and “parent” is kind of wrong naming for this).
 
 ![](/assets/img/post/etr-enc-4/branches.png)
 
@@ -637,7 +637,7 @@ void update(u32 Symbol)
 }
 ```
 
-In this case, `SubAlloc.realloc()` will perform reallocation only if we have exceeded the limit of available memory for the previously allocated block, It will ignore the value of `PreallocSymbol` if this block still has enough memory. For example, since previously we allocate memory for 2 `context_data` struct, when adding second symbol to the context,  `SubAlloc.realloc()` will immediately return the pointer that was passed as first argument to it. This behavior of the `realloc` function may not always be desirable, but it works for us. Next, we initialize the symbol, taking into account that context->TotalFreq has increased, and then return the result.
+In this case, `SubAlloc.realloc()` will perform reallocation only if we have exceeded the limit of available memory for the previously allocated block, It will ignore the value of `PreallocSymbol` if this block still has enough memory. For example, since previously we allocate memory for 2 `context_data` struct, when adding second symbol to the context,  `SubAlloc.realloc()` will immediately return the pointer that was passed as first argument to it. This behavior of the `realloc` function may not always be desirable, but it works for us. Next, we initialize the symbol, taking into account that `Context->TotalFreq` has increased, and then return the result.
 
 ### Complete context branch
 
@@ -749,7 +749,7 @@ void update(u32 Symbol)
 }
 ```
 
-Let’s look at what’s happening here using СM(3) \<abc\> from the picture above. If the context is completely missed, this means that the symbol ‘a’ hasn’t even appeared in CM(0) yet, then `Update->SeqIndex` will be equal to 0. With the previous step, we created symbol ‘a’ in CM(0), which means the next step should start from `Update->SeqIndex + 1`, that is, from symbol ‘b’. On the first iteration we create CM(1) \<a\> with a single symbol ‘b’ in it. On the second iteration, we create CM(2) \<ab\> that has the symbol ‘c’ in it, which `BuildContextFrom` is pointing to after this iteration is complete. After we finish this loop, we check SeqAt != To to ensure that all needed context on the way was build. If everything okay, we initialize for CM(3) \<abc\> with the symbol that we have passed to `update()`. 
+Let’s look at what’s happening here using СM(3) \<abc\> from the picture above. If the context is completely missed, this means that the symbol ‘a’ hasn’t even appeared in CM(0) yet, then `Update->SeqIndex` will be equal to 0. With the previous step, we created symbol ‘a’ in CM(0), which means the next step should start from `Update->SeqIndex + 1`, that is, from symbol ‘b’. On the first iteration we create CM(1) \<a\> with a single symbol ‘b’ in it. On the second iteration, we create CM(2) \<ab\> that has the symbol ‘c’ in it, which `BuildContextFrom` is pointing to after this iteration is complete. After we finish this loop, we check `SeqAt != To` to ensure that all needed context on the way was build. If everything okay, we initialize for CM(3) \<abc\> with the symbol that we have passed to `update()`. 
 
 ```
 void update(u32 Symbol)
@@ -994,7 +994,7 @@ decode_symbol_result getSymbolFromFreq(ArithDecoder& Decoder, context* Context)
 }
 ```
 
-Since we have already calculated `Prob.scale`, there is no need to calculate anything further except for the values `Prob.hi` and `Prob.lo`. In the case were we have found the symbol that we need, CumFreq stores the value of CDF[high], so we simply subtract the symbol’s frequency value form it to obtain CDF[low]. In the case of and ESC symbol, `Prob.scale == Prob.hi`, and to obtain `Prob.lo`, we simply subtract the `EscapeFreq` value.
+Since we have already calculated `Prob.scale`, there is no need to calculate anything further except for the values `Prob.hi` and `Prob.lo`. In the case were we have found the symbol that we need, `CumFreq` stores the value of CDF[high], so we simply subtract the symbol’s frequency value form it to obtain CDF[low]. In the case of and ESC symbol, `Prob.scale == Prob.hi`, and to obtain `Prob.lo`, we simply subtract the `EscapeFreq` value.
 
 ## Encoding EOS
 
