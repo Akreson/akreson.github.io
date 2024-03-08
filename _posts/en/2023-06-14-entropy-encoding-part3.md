@@ -8,7 +8,7 @@ math: true
 
 ## Setting test
 
-In this part, we will start looking at how we can use the AC that was written in the previous part. Entropy coders take value that need to be encode from a model that drives compression process. The role of the model is to estimate the probability of the symbol (maybe transform data in some way before) that we are encoding and pass that probability to the entropy coder. The boundary of this interaction may be blurred, as in the case of LZ, but in our case, the separation will be quite clear. If you have watched the commits from previous part, you have already seen that they had some simple static model. Maybe it would be better to consider implementation of the model itself first, but as changes in how we use our models will be minor from the following example, I decided at first give a glance at how we will use them, so in the future, we won't be disturbed from their implementation.
+In this part, we will start looking at how we can use the AC that has been written in the previous part. Entropy coders take value that need to be encode from a model that drives compression process. The role of the model is to estimate the probability of the symbol (maybe transform data in some way before) that we are encoding and pass that probability to the entropy coder. The boundary of this interaction may be blurred, as in the case of LZ, but in our case, the separation will be quite clear. If you have watched the commits from previous part, you have already seen that they have some simple static model. Maybe it would be better to consider implementation of the model itself first, but as changes in how we use our models will be minor from the following example, I decided at first give a glance at how we will use them, so in the future, we won't be disturbed from their implementation.
 
 ```
 void TestStaticAC(const file_data& InputFile)
@@ -107,7 +107,7 @@ public:
 }
 ```
 
-Since we don’t start encoding before collecting statistics of symbols appearing, we set our CDF to 0. I don’t use default memset() here because I needed to use a value bigger that 1 byte, and also because I get little annoyed when I change data type and forget to change memset() after. So, just for myself, this version allows me to strictly set data type of *dest_ptr and value, with something like -Wconverision this sometimes just save me a pair of nerve cells. Hope for your understanding.
+Since we don’t start encoding before collecting statistics of symbols appearing, we set our CDF to 0. I don’t use default memset() here because I needed to use a value bigger that 1 byte, and also because I get little annoyed when I change data type and forget to change memset() after. So, just for myself, this version allows me to strictly set data type of `*dest_ptr` and value, with something like `-Wconverision` this sometimes just save me a pair of nerve cells. Hope for your understanding.
 
 We begin `update()` by incrementing all CDF values starting from з `Symbol + 1` since each CDF value is sum of all previous frequency value.
 
@@ -124,7 +124,7 @@ void BasicACByteModel::update(u32 Symbol)
 }
 ```
 
-The maximum value for our CDF[Total] is limited by `FREQ_MAX_VALUE`. This means that our next step is to check if we need to reduce our CDF values.
+The maximum value for our CDF[Total] is limited by `FREQ_MAX_VALUE`. This means that our next step is to check if we need to normalize our CDF values.
 
 ```
 void BasicACByteModel::update(u32 Symbol)
@@ -150,9 +150,9 @@ void BasicACByteModel::update(u32 Symbol)
 }
 ```
 
-CDF[0] always will be 0, so we don’t touch it. After such operation can be the case when difference between CDF[i] and CDF[i - 1] will be equal to 0, while before the difference was 1. Therefore the check `Freq <= PrevFreq` is needed.
+CDF[0] always will be 0, so we don’t touch it. After such operation there can be a case when difference between `CDF[i]` and `CDF[i - 1]` will be equal to 0, while before the difference was 1. Therefore the check `Freq <= PrevFreq` is needed.
 
-In this normalization scheme we guarantee that each symbol can be encoded, even if it didn’t appear earlier. This not cool of course, because we spend CDF range for these symbols and as a consequence, reduce the possible CDF range for symbols that really need it. Since we already store our values as CDF, we can get our range using symbol directly.
+In this normalization scheme we guarantee that each symbol can be encoded, even if it hasn't appeared earlier. This of course not cool, because we spend CDF range for these symbols and as a consequence, reduce the possible CDF range for symbols that really need it. This is just drawback of this simple example. Since we already storing our values as CDF, we can get our range using symbol directly.
 
 ```
 prob BasicACByteModel::getProb(u32 Symbol) const
@@ -178,7 +178,7 @@ prob BasicACByteModel::getEndStreamProb() const
 }
 ```
 
-In order to find which symbol DecodedFreq correspond to, we need to find when the next value will be greater than the one we are looking for, because `CDF[Symbol] >= Freq < CDF[Symbol + 1]` as shown in the previous article because $Freq \in [CDF[low]; CDF[high])$. Since CDF implies that each subsequent value is at least not less than the previous one, we can check whether this is the symbol that corresponds to the passed CDF value simply by checking `Freq < CDF[Symbol + 1]`.
+In order to find which symbol the `DecodedFreq` correspond to, we need to find when the next value will be greater than the one we are looking for, because `CDF[Symbol] >= Freq < CDF[Symbol + 1]` as shown in the previous article because $Freq \in [CDF[low]; CDF[high])$. Since CDF implies that each subsequent value is at least not less than the previous one, we can check whether this is the symbol that corresponds to the passed CDF value simply by checking `Freq < CDF[Symbol + 1]`.
 
 ```
 prob BasicACByteModel::getSymbolFromFreq(u32 Freq, u32* Byte) const
@@ -212,7 +212,7 @@ Well, I think it’s obvious now why. Such a simple static model performs worse 
 
 ## Order-0
 
-Now as we have seen how to use AC for compression using simple static model, we can consider how to make our model adaptive, which means changing the probability of symbols during the  processing of input data. This is where the main advantage of coding using the AC method comes in. In order to unambiguously decode encоded symbols on the decoding side, the model needs to perform a symmetric (to the encoder) update of its probability. This means it adds work on both sides of the compression. When speaking about adaptive models, the general term that is used is Order-N, where N is amount of previous symbols based on which we estimate the probability for the current symbol.
+Now as we have seen how to use AC for compression using simple static model, we can consider how to make our model adaptive, which means changing the probability of symbols during the  processing of input data. This is where the main advantage of coding using the AC method bring up. In order to unambiguously decode encоded symbols on the decoding side, the model needs to perform a symmetric (to the encoder) update of its probability. This means it adds work on both sides of the compression. When speaking about adaptive models, the general term that is used is Order-N, where **N** is amount of previous symbols based on which we estimate the probability for the current symbol.
 
 It’s easy for our static model above to become Order-0, which means the estimation of probability will not directly depend on the previous symbol but on symbols that have been collected so far during processing time. For this, we need to initialize our CDFs so we can use them from the start. We just need to change the `reset()` function to set every CDF value to 1.
 
@@ -275,7 +275,7 @@ We have made our files smaller (besides `geo`)! Although difference not very imp
 
 Next, what we can try is to change our model to Order-1. The idea is that, if we take text as an example, after the letter ‘g’ in some particular text, the probability that the next letter will be ‘e’ is 80%, while for the text as a whole, the probability for ‘e’ can be only 20%. We can say that for Order-N models where N > 0, we collect data for specific context, where the context is the previous N symbols, and we do encoding for our next symbol based on data from the current context.
 
-The API for Order-1 with how we use it will remain the same as in Order-0. The changes will only touch the implementation of this class.
+The API for Order-1 with part of how we use it will remain the same as in Order-0. The changes will only touch the implementation of this class.
 
 ```
 class SimpleOrder1AC
@@ -303,9 +303,9 @@ public:
 }
 ```
 
-This time, for the purpose of example, we will store counter for the frequency of each symbol directly, instead of using CDF values. However, now such arrays exist for each possible context. We don’t have functionality for starting from a completely empty context. For that reason, to be able to perform encoding/decoding at the beginning, we set the starting frequency for each symbol as 1. Starting value of `PrevSymbol`, we assume to be 0 because it convenient and we don’t have to add some branching in the next functions to check if `PrevSymbol` was set at all.
+This time, for the purpose of example, we will store counter for the frequency of each symbol directly, instead of using CDF values. However, now arrays of counters exist for each possible context. We don’t have functionality for starting from a completely empty context. For that reason, to be able to perform encoding/decoding at the beginning, we set the starting frequency for each symbol as 1. Starting value of `PrevSymbol`, we assume to be 0 because it convenient and we don’t have to add some branching in the next functions to check if `PrevSymbol` was set at all.
 
-Like the previous time, we start with an `update()`:
+Like in the previous time, we start with an `update()`:
 
 ```
 void SimpleOrder1AC::update(u32 Symbol)
@@ -333,7 +333,7 @@ void SimpleOrder1AC::update(u32 Symbol)
 }
 ```
 
-Since we’re not working with CDFs now, we can simple increment our symbol frequency and the total sum in the current context. To get our CDF now, we need to calculate it.
+Since we’re not working with CDFs now, we can simple increment our symbol frequency and the total sum in the current context. To get our CDF now, we need to calculate it, though.
 
 ```
 prob SimpleOrder1AC::getProb(u32 Symbol) const
@@ -366,6 +366,7 @@ prob SimpleOrder1AC::getEndStreamProb() const
     Result.lo = Result.hi - CtxFreq[FreqArraySize - 1];
     return Result;
 }
+
 u32 SimpleOrder1AC::getCount() const
 {
     return Total[PrevSymbol];
@@ -398,7 +399,7 @@ prob SimpleOrder1AC::getSymbolFromFreq(u32 DecodeFreq, u32* Byte) const
 }
 ```
 
-We stop our search as soon as we get the **high** value that we know for sure is greater than `DecodeFreq` because `DecodeFreq < high`. We can’t stop loop as soon as we found our low range because the frequency of the next values can be 0. In this case, CDF[low] will stay the same until we loop over them. That’s why we need to be sure that this symbol has non zero counter and it fits in our range at all. Of course, minimal counter that symbol can have now is 1, but this need to know for the future.
+We stop our search as soon as we get the **high** value that we know for sure is greater than `DecodeFreq` because `DecodeFreq < high`. We can’t stop loop as soon as we found our low range because the frequency of the next values can be 0. In this case, CDF[low] will stay the same until we loop over them. That’s why we need to be sure that this symbol has non zero counter and it fits in our range at all. Of course, minimal counter that symbol can have now is 1 and this will not be the case, but this important to understand for the future.
 
 
 | name  |   H   | file size | compr. size |  bpb  |
@@ -408,7 +409,7 @@ We stop our search as soon as we get the **high** value that we know for sure is
 | obj2  | 6.26  |    246814 | 135828      | 4.402 |
 | pic   | 1.21  |    513216 | 58668       | 0.91  |
 
-Look better! The `pic` file benefited the most from this model, which is quite logical because it has the lowest entropy. At the same time, despite the fact that `obj2` has more entropy than `geo`, it becomes smaller both in percentage and absolute terms. This is because we can’t achieve good compression without actually knowing data that we’re trying to compress. It just so happens that data in `obj2` has better context dependency in our simple model that works with bytes, then `geo` file. To squeeze the minimum entropy from a certain type of data, we need a model that operates on the elements of that data. Thus, an ideal general-purpose compressor that is also practical, meaning it not take several days to perform compression and decompression, cannot exist (at least not at the time of writing this article). However, it is not always possible to have a separate model for each type of data. We can attempt to improve our result by increasing the Order of our model. The problem with our last implementation is that it scales very poorly. For Order-2, we would require (257 * 257 * 257) * 2 = 32 MiB, which is not too much for modern systems. However, for Order-3, we would need (257 * 257 * 257 * 257) * 2 = 8 GiB! Additionally, it would be really useful to have the option to not spend range on symbols that we did not encounter at all. We will solve all of this in the next parts.
+Look better! The `pic` file benefited the most from this model, which is quite logical because it has the lowest entropy. At the same time, despite the fact that `obj2` has more entropy than `geo`, it becomes smaller both in percentage and absolute terms. This is because we can’t achieve good compression without actually knowing data that we’re trying to compress. It just so happens that data in `obj2` has better context dependency in our simple model that works with bytes, then `geo` file. To squeeze the minimum entropy from a certain type of data, we need a model that operates on the elements of that data. Thus, an ideal general-purpose compressor that is also practical, meaning it not take several days to perform compression and decompression, cannot exist (at least not at the time of writing this article). However, it is not always possible to have a separate model for each type of data. We can attempt to improve our result by increasing the Order of our model. The problem with our last implementation is that it scales very poorly. For Order-2, we would require (257 * 257 * 257) * 2 = 32 MiB, which is not too much for modern systems. However, for Order-3, we would need (257 * 257 * 257 * 257) * 2 = 8 GiB! Additionally, it would be really useful to have the option to not spend range on symbols that we have not encountered at all. We will solve all of this in the next parts.
 
 By the way, a static model does not necessarily mean that we need to calculate something in advance. Sometimes we just know the probability of events. Here's an [example](https://preshing.com/20121105/arithmetic-coding-and-the-1mb-sorting-problem/) of how it can be used from Jeff Preshing's blog.
 

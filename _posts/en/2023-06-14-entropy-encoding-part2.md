@@ -8,11 +8,11 @@ math: true
 
 ## Introduction
 
-The group of methods for encoding еntropy that can do this by using fractional of code length is called arithmetic coding (AC for short). In this part, we will look at how the classical version of AC works. If you are planning to use one of the AC methods in your project, it’s better to check if it is under patent or something.
+The group of methods for encoding еntropy that can do this with a fractional part of code length is called arithmetic coding (AC for short). In this part, we will look at how the classical version of AC works. If you are planning to use one of the AC methods in your project, it’s better to check if it is under patent or something.
 
-if you have decided to really delve into compression, then facing AC is inevitable. When you hear for the first time that there is a possibility to encode something using fractional bit lengths, it feels like something crazy. My introduction to AC was completely wrong and confusing because I started from scratch and didn’t understand what I was trying to figure out at all. I also started with a fairly new AC method, which was also very wrong without knowing the basics. It’s just at that time I thought it was the same, conceptually this may be true, but they have different implementations and properties. That’s why I know for myself that if you start learning how AC works, knowing only its name, it can be quite frustrating. At the end I listed materials that if I had found at start would save me a lot of time in understanding AC. I'll try to give just another form of explanation with code examples, which I hope will help to build the picture of how this work faster.
+if you have decided to really delve into compression, then facing with AC is inevitable. When you hear for the first time that there is exist a possibility to encode something using fractional bit lengths, it feels like something crazy. My introduction to AC was completely wrong and confusing because I started from scratch and didn’t understand what I was trying to figure out at all. I also started with a fairly new AC method, which was also very wrong without knowing the basics. It’s just at that time I thought it was the same, conceptually this may be true, but they have different implementations and properties. That’s why I know for myself that if you start learning how AC works, knowing only its "name", it can be quite frustrating. At the end I listed materials that if I had found at start would saved me a lot of time in understanding AC. I'll try to give just another form of explanation with code examples, which I hope will help to build the picture of how it works faster.
 
-The main idea of AC encoders is to try to increase (or decrease) the base by the amount of entropy needed to encode the probability, in such a way that it will then be possible to unambiguously decode this increase (depending on the encoder, it can be both FIFO or LIFO). When I said to increase by entropy, I meant the following operation: our base is 16384 which is $log_2 = 14$ bits. We have to encode a probability 0.9 that requires 0.15 bits. Now our base will be equal to 14.15 bits of entropy. That means if we repeat this operation 5 times, our base will be 15 bits. We encoded 6 values, but our base has grown only by 1 bit. This is just an illustration of what I mean, so don’t focus on it, but in this way, with pinch of math, this is what happens. How exactly the base is represented and the increase happens depend on the AC realization. Very soon we will see how we can do this, but first, we can make some conclusion. Our base should be big enough to have the capability to encode values in itself. For example, $log_2 \ 4$ - $log_2 \ 2$ will be 1 bit, but it’s obvious that this not the same as $log_2 \ 32768$ - $log_2 \ 16384$ where difference also 1 bit. In the first case, we just don’t have enough resolution to encode something in between.
+The main idea of AC encoders is to try to increase (or decrease) the base by the amount of entropy needed to encode symbol with some probability, in such a way that it will then be possible to unambiguously decode this increase (depending on the encoder, it can be both FIFO or LIFO). When I said to increase by entropy, I meant the following operation: our base is 16384 which is $log_2 = 14$ bits. We have to encode a symbol with a probability of 0.9 that requires 0.15 bits. Now our base will be equal to 14.15 bits of entropy. That means if we repeat this operation 5 times, our base will be 15 bits. We encoded 6 values, but our base has grown only by 1 bit. This is just an illustration of what I mean, so don’t focus on it, but in this way, with pinch of math, this is what happens. How exactly the base is represented and the increase happens depend on the AC realization. Very soon we will see how we can do this, but first, we can make some conclusion. Our base should be big enough to have the capability to encode values in itself. For example, $log_2 \ 4$ - $log_2 \ 2$ will be 1 bit, but it’s obvious that this not the same as $log_2 \ 32768$ - $log_2 \ 16384$ where difference also 1 bit. In the first case, we just don’t have enough resolution to encode something in between.
 
 ## Big picture
 
@@ -24,7 +24,7 @@ This is necessary so that we can distinguish between the symbols that we are enc
 
 ![](/assets/img/post/etr-enc-2/scheme.png){: height="350" width="550"}
 
-The decoding process is nearly identical in this simplified scheme. First, we try to find a range to which the code belong to, and then updating our interval on the range of the decoded symbol.
+The decoding process is nearly identical in this simplified scheme. First, we try to find a range to which the code belong to, and then updating our interval by the range of the decoded symbol.
 
 ```TEXT
 0.4 >= 0.493 < 0.5 (b)
@@ -38,7 +38,7 @@ We are basically building an infinitely small number by adding information to it
 
 ### Finite precision
 
-We have just seen an example of how it would work if we had infinite precision. In order to implement the algorithm in practice, we must decide how we will store our **high** and **low** values and CDF range for symbols. Using float point will be impractical since this format can only store a limited number of symbols encoded in this way and the accuracy is limited.  If you are not familiar with floating point format, you can try to play with it [here](https://www.h-schmidt.net/FloatConverter/IEEE754.html). So, I’ll go straight to fixed point format. I would like to point out in advance that all rules for encoding and decoding work kind of “together”, so for you, as for me, it may not be obvious why some operation make sense. In this case, just keep reading, maybe it will become clear later.
+We have just seen an example of how it would work if we would have infinite precision. In order to implement the algorithm in practice, we must decide how we will store our **high** and **low** values and CDF range for a symbols. Using float point will be impractical since this format can only store a limited number of symbols encoded in this way and the accuracy is limited.  If you are not familiar with floating point format, you can try to play with it [here](https://www.h-schmidt.net/FloatConverter/IEEE754.html). So, I’ll go straight to fixed point format. I would like to point out in advance that all rules for encoding and decoding work kind of “together”, so for you, as for me, it may not be obvious why some operation make sense. In this case, just keep reading, maybe it will become clear later.
 
 First, let’s decide on **high** and **low** storage format. As you can see from the example of the algorithm execution, these are the values that we use to store information about all encoded symbols. We can say that they our base. From the first picture (and the previous part), we can conclude that the high of our range should never be equal to one. This means that our range for low and high is [0, 1), and the same will applies for CDF. An open interval means that our number can be infinitely close to one but never be equal to it e.g. 0.99(9).
 
@@ -47,14 +47,14 @@ high = 0xFFFFFF(F…)
 low = 0x000000(0…)
 ```
 
-We operate with **low** and **high** value in the register, and of course it can’t fit infinite values inside (no thanks, please). But we assume that beyond the LSB boundary, we have an infinite number of 1’s for **high** and 0’s for **low**. How we use this will be shown. The representation of CDF is kind of similar in the way that we have values that are between 0 and 0.99(9), but we save it as an integer number and count it relative to the total sum of CDF. We can calculate what range some symbol takes like:
+We operate with **low** and **high** value in the register, and of course it can’t fit infinite values inside (no thanks, please). But we assume that beyond the LSB boundary, we have an infinite number of 1’s for **high** and 0’s for **low**. A bit later I will show we gonna use this. The representation of CDF is kind of similar in the way that we have values that are between 0 and 0.99(9), but we save it as an integer number and count it relative to the total sum of CDF. We can calculate what range some symbol takes like:
 
 ```
 X_h = CDF[S_h] / CDF[Total]
 X_l = CDF[S_l] / CDF[Total]
 ```
 
-Next questions are how many bits of our base we should save at a time and what maximum value should be allowed for our CDF to store? Let’s first look at how we operate with our **low**, **high** and CDF values at all.  The formula from the second picture only works if our numbers are between zero and one. We also can’t use the formula for CDF range above since we work with integer and such division will always give us 0. Hence our formula will look like this:
+Next questions are how many bits of our base we should have and what maximum value should be allowed for our CDF to store? Let’s first look at how we operate with our **low**, **high** and CDF values at all. The formula from the second picture only works if our numbers are between zero and one. We also can’t use the formula for CDF range above since we work with integer and such division will always give us 0. Hence our formula will look like this:
 
 ```
 high = low + ((range * CDF[X_h]) / CDF[Total])
@@ -115,15 +115,15 @@ void ArithEncoder::encode(prob Prob)
 }
 ```
 
-The calculation of the new ranges looks almost the same as in the formula above. Adding and subtracting one is necessary because we have an open interval in our hi variable. As was said before, beyond LSB boundary, we have an infinite number of 1’s. Since we are infinitely close to the next number, not adding one will count as rounding (at least in this implementation of AC). We subtract it for the same reason. If we ignore this operation, it will bring us to situation when we are not being able to decode our data.
+The calculation of the new ranges looks almost the same as in the formula above. Adding and subtracting one is necessary because we have an open interval in our **high** variable. As was said before, beyond LSB boundary, we have an infinite number of 1’s. Since we are infinitely close to the next number, not adding one will count as rounding (at least in this implementation of AC). We subtract it for the same reason. If we ignore this operation, it will bring us to situation when we are not being able to decode our data right.
 
 ### Normalization
 
-The next step is normalization. As soon as we change our low high range, all subsequent ranges will stay inside the previous one. This mean that if our first range become e.g. 0.1– 0.4, then values beyond this range will never be used. In the context of a fixed point, this means that these are bits that will never change in subsequent calls, so we can write them down. If value of `hi` less then 0.5, then it will never get greater than that and we can write 0 to the output stream. If the value of `lo` gets greater then 0.5 for same reason write 1.
+The next step is normalization. As soon as we change our **low** **high** range, all subsequent ranges will stay inside the previous one. This mean that if our first range become e.g. 0.1– 0.4, then values beyond this range will never be used. In the context of a fixed point, this means that these are bits that will never change in subsequent calls, so we can write them down. If value of `hi` less then 0.5, then it will never get greater than that and we can write 0 to the output stream. If the value of `lo` gets greater then 0.5 for same reason write 1.
 
 ![](/assets/img/post/etr-enc-2/border1.png)
 
-After that, we can shift out the MSB that we have already written and that will never change, and in place of new LSB put bit from infinite pool. Basically, we are do rescaling for our range.
+After that, we can shift out the MSB that we have already written and that will never change, and in place of new LSB put bit from infinite pool. Basically, we are doing rescaling for our range.
 
 ```
 //ac.cpp
@@ -214,7 +214,7 @@ void ArithEncoder::writeBit(u32 Bit)
 }
 ```
 
-In the third case, we write nothing to the output stream. Instead, only mark that there was a rescaling to `PendingBits` and wait for an opportunity to write them. This part is probably the hardest to understand, and until I saw a visual explanation of this step[4], I couldn’t fully understand why it working. The fact is that we, in any case, need to avoid convergence. We cannot leave our ranges as they are. We don’t know yet, at the current scale, which MSB will not change in the future, but latter, on a more global scale, we will know.
+In the third case, we write nothing to the output stream. Instead, only make a note about that there was a rescaling to `PendingBits` and wait for an opportunity to write these bits. This part is probably the hardest to understand, and until I saw a visual explanation of this step[4], I couldn’t fully understand why it working. The fact is that we, in any case, need to avoid convergence. We cannot leave our ranges as they are. We don’t know yet, at the current scale, which MSB will not change in the future, but latter, on a more global scale, we get this information.
 
 ![](/assets/img/post/etr-enc-2/scale3.png)
 
@@ -235,7 +235,7 @@ void ArithEncoder::flush()
 }
 ```
 
-This how encoding happens. The larger the CDF range a symbol occupies (that is, the higher its probability), the less we narrow our **low** and **high** range, which is why compression occurs.
+This is how encoding happens. The larger the CDF range a symbol occupies (that is, the higher its probability), the less we narrow our **low** and **high** range, which is why compression occurs.
 
 ## Decoding
 
@@ -270,7 +270,7 @@ range = high – low
 value = (code – low) * range
 ```
 
-For the first step from pic.1, this operation will return 0.493, but on the second step, we will obtain 0.93, which falls within the CDF range for the symbol 'd'. This is how we will obtain our encoded symbol values since at any given time, we consider only a fraction of the encoded number and cannot compare it directly as shown in the image. Actually, it's not exactly true. For binary AC it no need to do this reverse transformation. It just for a non-binary alphabet this method is more optimal than converting each CDF range to the current range of **high** and **low** and comparing them on that scale. So, our function for obtainig current encoded freequnce look like this:
+For the first step from pic.1, this operation will return 0.493, but on the second step, we will obtain 0.93, which falls within the CDF range for the symbol 'd'. This is how we will obtain our encoded symbol values at each step. We consider only a fraction of the encoded number and cannot compare it directly as shown in the image. Actually, it's not exactly true. For binary AC it is no need to do this reverse transformation. It just for a non-binary alphabet this method is more optimal than converting each CDF range to the current range of **high** and **low** and comparing them on that scale. So, our function for obtainig current encoded freequnce look like this:
 
 ```
 u32 ArithDecoder::getCurrFreq(u32 Scale)
@@ -289,11 +289,11 @@ During encoding, we first multiply by range and then divide by Scale. Now we per
 CDF[high] - CDF[low] = 1
 ```
 
-If the range on which we divide is even one less that the range of our CDF, at one point we won’t be able to decode such a symbol and our compression will simply be useless. The lowest range that can be between high and low we can find out by look at normalization scheme, and this will be when `high == TREE_FOURTHS` and `low == ONE_HALF – 1`,  or `high == ONE_HALF` and `low == ONE_FOURTH - 1`. That’s why we need that our max value of CDF to be at least four times smaller than range between **high** and **low**.
+If the range on which we divide is even less by one than the range of our CDF, at one point we won’t be able to decode such symbol because we will be in wrong CDF range and our compression will simply be useless. The lowest range that can be between **high** and **low** we can find out by looking at normalization scheme, and this will be when `high == TREE_FOURTHS` and `low == ONE_HALF – 1`,  or `high == ONE_HALF` and `low == ONE_FOURTH - 1`. That’s why we need that our **high** and **low** values must be at least 4 time greater than max CDF value.
 
 ### Normalization
 
-Updating the range looks nearly the same, only that now we have a `code` for which we should do the same operation as for **high** and **low**, since normalization now signals to us when we should grab new bits from encoded stream.
+Updating the range looks nearly the same, only that now we have the `code` for which we must do the same operation as for **high** and **low**, since normalization now signals to us when we should grab new bits from encoded stream.
 
 ```
 void ArithDecoder::updateDecodeRange(prob Prob)
@@ -333,9 +333,12 @@ void ArithDecoder::updateDecodeRange(prob Prob)
 
 ## Comparison with Huffman
 
-That’s how AC look like. The main advantage of this method of encoding entropy is that we don’t have a hard restriction on the source from which we take our probability to encode, namely the CDF value. Only that CDF[Total] must not exceed `FREQ_BITS`. This allows us to change the probabilities during the encoding/decoding process, which means that we can make our probability estimates adaptive. The encoder by itself only encode the ranges and their interpretations is our business.
+That’s how AC look like. The main advantage of this method of encoding entropy is that we don’t have a hard restriction on the source from which we take our probability to encode, namely the CDF value. Only that CDF[Total] must not exceed `FREQ_BITS`. This allows us to change the probabilities during the encoding/decoding process, which means that we can make our probability estimates adaptive.
 
-Below is a comparison of compression (if we take the count of occurrence of each individual byte from the entire file) between a simple Huffman implementation with a maximum code length of 12 bits and the above AC with a maximum CDF value of 2^14 which was optimally normalized. We haven’t looked at how we encode values with AC and how to do normalization for CDF yet, so for now, it’s enough to understand that. if we try to map a frequency counts for bytes whose total sum is greater than maximum value that can hold CDF, there will be variation in who should take shorter codes and who should take longer codes. The optimal method will give CDF values that result in the smallest compression. Decoding was done without auxiliary data struct. Also if we know that CDF[Total] == 2^n we can replace some divisions with shifts, I didn't do that for test.(c/s means clock/symbol).
+> The encoder by itself only encode the ranges and their interpretations is our business.
+{: .prompt-info }
+
+Below is a comparison of compression (if we take the count of occurrence of each individual byte from the entire file) between a simple Huffman implementation with a maximum code length of 12 bits and the above AC with a maximum CDF value of 2^14 which was optimally normalized. We haven’t looked at how we encode values with AC and how to do normalization for CDF yet, so for now, it’s enough to understand that if we try to map a frequency counts for bytes whose total sum is greater than maximum value that can hold a choosen CDF range, there will be variation in who should take shorter codes and who should take longer codes. The optimal method will give CDF values that result in the smallest compression. Decoding was done without auxiliary data struct. Also if we know that CDF[Total] == 2^n we can replace some divisions with shifts, I didn't do that for test. (c/s means clock/symbol).
 
 *Result for AC*
 
@@ -380,7 +383,7 @@ To make this work, we also need to change values for `CODE_BITS` і `FREQ_BITS`.
 | obj2  | 6.26  |    246814 | 193202      | 6.26  | 283,1 (13.1 MiB/s) | 278.2 (13.3 MiB/s) |
 | pic   | 1.21  |    513216 | 78031       | 1.215 | 84,4 (44 MiB/s)    | 102,5 (36.2 MiB/s) |
 
-Despite the decrease in accuracy, the result did not get much worse. The reduction of division operations did not produce a "wow effect" in terms of encoding speed. The benchmark result was at an level of error, so I don't want to fool you and choose best one. Interestingly, although the number of divisions for decoding remained the same, it seems that the dependency graph of instructions is better handled by my CPU in this way (actually the result varies between compilers). Several MiB/s is of course cool, but it certainly would be better if it was more. It's not surprising that the encoding process is so tight. It might be fine if we do some simple loop during normalization, but only branch miss are nearly 30% and greater (depending on data entropy). The ability to set `CODE_BITS` to 31 bits, which will allow us to normalize byte at a time instead of bit by bit, is essentially the main advantage of changing the division order. Shifting a whole byte at a time with 16 bits `CODE_BITS`  means that we will be waiting until the 8 MSB bits became identical, and as result, the precision of the range whould shring to 8 bits, which in turn adds constraing to the max value for CDF. But what is more important is that such normalizations scheme will not work for byte at a time. The canonical implementation for multi character (since binary came before) AC with byte at a time normalization is probably [Michael Schindler](http://www.compressconsult.com/rangecoder/) version. You can read about how and why it works starting from [this](http://cbloomrants.blogspot.com/2008/10/10-05-08-5.html) post by Charles Bloom. You just won’t find anywhere else to read about it, at least I didn’t. If you’re new to compression and haven’t come across Charles’s blog, it’s one of the main source of information about compression on the internet at all, by the way.
+Despite the decrease in accuracy, the result did not get much worse. The reduction of division operations did not produce a "wow effect" in terms of encoding speed. The benchmark result was at an level of error, so I don't want to fool you and choose best one. Interestingly, although the number of divisions for decoding remained the same, it seems that the dependency graph of instructions is better handled by my CPU in this way (actually the result varies between compilers). Several MiB/s is of course cool, but it certainly would be better if it was more. It's not surprising that the encoding process is so tight. It might be fine if we do some simple loop during normalization, but only branch miss are nearly 30% and greater (depending on data entropy). The ability to set `CODE_BITS` to 31 bits, which will allow us to normalize byte at a time instead of bit by bit, is essentially the main advantage of changing the division order. Shifting a whole byte at a time with 16 bits `CODE_BITS` means that we will be waiting until the 8 MSB bits became identical, and as result, the precision of the range whould shring to 8 bits, which in turn adds constraing to the max value for CDF. But what is more important is that such normalizations scheme will not work for byte at a time. The canonical implementation for multi character (since binary came before) AC with byte at a time normalization is probably [Michael Schindler](http://www.compressconsult.com/rangecoder/) version. You can read about how and why it works starting from [this](http://cbloomrants.blogspot.com/2008/10/10-05-08-5.html) post by Charles Bloom. You just won’t find anywhere else to read about it, at least I didn’t. If you’re new to compression and haven’t come across Charles’s blog, it’s one of the main source of information about compression on the internet at all, by the way.
 
 In the next parts, I will be using the version of AC that I showed, so keep that it in mind. If I show some benchmark then it is very likely that later I will add the result for the byte wise normalization version of AC bellow. If my explanation will be useful for people who are just getting into compression, then I’ll try to make a post like this for AC with byte wise normalization.
 
