@@ -9,15 +9,15 @@ tags: [arithmetic coding, compression model, PPM]
 
 For extending the idea of context modeling shown in `SimpleOrder1AC`, we don’t need to invent anything. It was already done for us back in 1984 by the authors who laid down the idea of the PPM (Prediction by Partial Matching) algorithm [1].
 
-In order to have some context for what we will be doing in this part, let’s consider what PPM represents. We will be discussing finite-context modeling, which means our model will hold maximum of Order-N context, where N we set as parameter at initialization of the model. As a quick reminder, Order-N context means number of preceding symbols that we have processed, which form the context for encoding the current symbol. In the case of `SimpleOrder1AC`, the context for the current symbol was formed by only one preceding symbol. That is, we have model and contexts of this model (CM). For each context from 0 to the N-th order that we encounter, we will create a CM of that order (the order of particular context will be denoted as CM(k)).
+In order to have some context for what we will be doing in this part, let’s consider what PPM represents. We will be discussing finite-context modeling, which means our model will hold maximum of Order-N context, where N we set as parameter at initialization of the model. As a quick reminder, Order-N context means number of preceding symbols that we have processed, which form the context for encoding the current symbol. In the case of `SimpleOrder1AC`, the context for the current symbol was formed by only one preceding symbol. So, we have a model and contexts of this model (CM). For each context from 0 to the N-th order that we encounter, we will create a CM of that order (the order of particular context will be denoted as CM(k)).
 
-Similar to `SimpleOrder1AC`, each CM will store a counter for every symbol encountered in that particular context. Based on these counters, we will estimate the probability of the symbol we are trying to encode. Since contexts are created dynamically, we will store all contexts and their corresponding data in a pre-allocated fixed-size memory pool. This helps limit the maximum amount of memory that PPM can use. To fit as many contexts as possible for each of them we only store the symbols that have appeared in it.
+Similary to `SimpleOrder1AC`, each CM will store a counter for every symbol encountered in that particular context. Based on these counters, we will estimate the probability of the symbol we are trying to encode. Since contexts are created dynamically, we will store all contexts and their corresponding data in a pre-allocated fixed-size memory pool. This helps to limit the maximum amount of memory that PPM can use. In other case it can easily eat up all memory. To fit as many contexts as possible we store only symbols that have appeared in each particular context.
 
-When encoding symbols, we start by attempting to encode them in the highest available CM, as we can assume that the accumulated statistic in those contexts most relevant for us, although not necessarily. If we encounter a symbol that has not appeared in the current context or if the context does not exist yet, we descend to a lower-order child context until we find a context where we can encode the current symbol. For example, if we have two context CM(2) \<oq\> and \<kq\>, they will share a common lower-order child context CM(1) \<q\>. If we find a context but still need to descend to a child context (due to a symbol miss), we must indicate this. This is necessary because we encode our symbol in context that is different from the current context. While encoding, it is obvious to us that the current context doesn’t have the required symbol, but during decoding, we only receive CDF values that are between CDF[low] and CDF[high] of the encoded symbol. We need decode the received value unambiguously, and for this, we must be in the right context at that time. To signal to the decoder that it needs to descend to the child context, we use a special symbol whose value doesn’t  belong to any of the symbols in our alphabet. This symbol is called an escape symbol (ESC).
+For each symbol that we encoding, we start by attempting to encode them in the highest available CM, as we can assume that the accumulated statistic in those contexts most relevant for us, although not necessarily. If we encounter a symbol that has not appeared in the current context or if the context does not exist yet, we descend to a lower-order child context until we find a context where we can encode the current symbol. For example, if we have two context CM(2) \<oq\> and \<kq\>, they will share a common lower-order child context CM(1) \<q\>. If we have found a context but still need to descend to a child context due to a symbol miss, we must indicate this. This is necessary because we encode our symbol in context that is different from the current context. While encoding, it is obvious to us that the current context doesn’t have the required symbol, but during decoding, we only receive CDF values that are between CDF[low] and CDF[high] of the encoded symbol. We need decode the received value unambiguously, and for this, we must be in the right context at that time. To signal to the decoder that it needs to descend to the child context, we use a special symbol whose value doesn’t belong to any of the symbols in our alphabet. This symbol is called an escape symbol (ESC).
 
-The first context that we can have is CM(-1), where all symbols will have equal probability and won’t be changed after encoding from it. In this case, in CM(0), we can store only the symbols that appear in it. Similarly, we can initialize all symbols for CM(0) at beginning and use them. If we encode ESC in the first context (CM(-1) or CM(0)), we assume that it denotes the end-of-stream.
+The first context that we can have is CM(-1), where all symbols will have equal probability and won’t be changed after encoding from it. In this case, in CM(0), we can store only a symbols that appear in it. Similarly, we can initialize all symbols for CM(0) at beginning and use them. If we encode ESC in the first context (CM(-1) or CM(0)), we assume that it denotes the end-of-stream.
 
-Bellow it an illustration of the possible context in the “abraabracadabra” text when encoding the last character ‘a’. In most examples I’ve seen context tree are depicted from right to left. This doesn’t change the meaning, but since most of us imaging that we read our data from left to right, it seemed to me that it would be easier to see how they are created from that point of view. 
+Bellow is an illustration of a possible context in the “abraabracadabra” text when encoding the last character ‘a’. In most examples I’ve seen context tree are depicted from right to left. This doesn’t change the meaning, but since most of us imaging that we read our data from left to right from memory, it seemed to me that it would be easier to see how they are created from that point of view. 
 
 ![](/assets/img/post/etr-enc-4/abra.png){: w="600" h="900"}
 
@@ -78,7 +78,7 @@ public:
     }
 }
 ```
-What each variable means we be seen literally in the next two function. That’s why I’ll hold explanation for them until then. For now, we can see, as I mentioned before, that we limit model’s memory usage and context depth at initialization. `StaticSubAlloc` is simple allocator driven by double linked list.
+What each variable means we will see literally in the next two function. That’s why I’ll hold explanation for them until then. For now, we can see, as I mentioned before, that we limit model’s memory usage and context depth at initialization. `StaticSubAlloc` is simple allocator driven by double linked list and can (probably must) be separeted from model at all.
 
 ```
 void initModel()
@@ -117,7 +117,7 @@ void initModel()
 }
 ```
 
-During encoding/decoding of the first few symbols, we don’t have any contexts yet with a length of `OrderCount` to determine how many previous symbol we can use for context searching. To keep track of  their current count, we store it in `CurrMaxOrder`, which is initially set to 0. The previous symbols are stored in the `ContextSeq` array, where oldest symbol encountered is stored under index 0 and the symbol for CM(N) is stored under the index `CurrMaxOrder – 1`. Our CM(-1) is represented by `StaticContext`, where the frequency of each symbol will always be 1. We also initialize the Order0 context at the beginning so that we don’t have to check it every time we access it, as every search of CM(k) context starts from CM(0). Initialization symbol 0 in CM(0) also allows us to eliminate some edge checks during execution.
+During encoding/decoding of the first few symbols, we don’t have any contexts yet with a length of `OrderCount` to determine how many previous symbol we can use for context searching. To keep track of current max depth, we use `CurrMaxOrder`, which is initially set to 0. The previous symbols are stored in the `ContextSeq` array, where oldest symbol encountered is stored under index 0 and the symbol for CM(N) is stored under the index `CurrMaxOrder – 1`. Our CM(-1) is represented by `StaticContext`, where the frequency of each symbol will always be 1. We also initialize the Order0 context at the beginning so that we don’t have to check it every time we access it, as every search of CM(k) context starts from CM(0). Initialization symbol 0 in CM(0) also allows us to eliminate some edge checks during execution.
 
 Initializing the context as follows:
 
@@ -158,7 +158,7 @@ void reset()
 }
 ```
 
-This means that in general, it is necessary to check every allocation even during execution of `initModel()`, or at least set a minimum memory pool size, but I didn’t do it because this is just test code. The struct for `context_data_excl` this is an array in which we mark the presence of those symbols that we saw in parent context while we go down through child contexts.
+This means that in general, it is necessary to check every allocation even during execution of `initModel()`, or at least set a minimum memory pool size, but I didn’t do it because this is just test code. The struct for `context_data_excl` is an array in which we mark the presence of those symbols that we saw in parent context while we go down through child contexts.
 
 ```
 struct context_data_excl
@@ -219,7 +219,18 @@ void encode(ArithEncoder& Encoder, u32 Symbol)
 }
 ```
 
-One variable that was not mentioned in `initModel()` is `SeqLookAt`. We always set it to 0 at the start of the symbol encoding process because it serves as a point from which symbol we should start searching for the context in `ContextSeq` array. Next, in the loop, we look for the context in which we will encode the symbol. We perform the search in the loop so that if the search for the current CM(k) context fails (symbol miss or such context just don’t exist yet), we can start searching again for CM(k - 1) starting from `ContextSeq[SeqLookAt + 1]`. If the searched CM(k) context has not yet been build, which is indicated by `Find.IsNotComplete`, then we don’t need to send ESC because the decoder won’t have this context either, and we simply store the result of this search in the `ContextStack` so that we can later build the missed context branch inside `update()` we can built missed context branch. The structure for the search result looks like this:
+One variable that was not mentioned in `initModel()` is `SeqLookAt`. We always set it to 0 at the start of the symbol encoding process because it serves as a point from which symbol we should start searching for the context in `ContextSeq` array. Next, in the loop, we look for the context in which we will encode the symbol. We perform the search in the loop so that if the search for the current CM(k) context fails (symbol miss or such context just don’t exist yet), we can start searching again for CM(k - 1) starting from `ContextSeq[SeqLookAt + 1]`. If the searched CM(k) context has not yet been build, which is indicated by `Find.IsNotComplete`, then we don’t need to send ESC because the decoder won’t have this context either, and we simply store the result of this search in the `ContextStack` so that we can later build the missed context branch inside `update()`. The structure for the search result looks like this:
+
+```
+struct find_context_result
+{
+    context* Context;
+    u16 SeqIndex;
+    u16 ChainMissIndex;
+    b16 IsNotComplete;
+    b16 SymbolMiss;
+};
+```
 
 When looking for the desired context, we try to follow the chain of pointers `context_data->Next` for the symbols stored in `ContextSeq` starting from `SeqLookAt`. That mean if we didn’t find the context for CM(3) \<abc\>, then we search for CM(2) \<bc\>, not for \<ab\>.
 
@@ -260,7 +271,7 @@ void findContext(find_context_result& Result)
 }
 ```
 
-First, in each context, we search for the symbol to move to the next context. 
+First, in each context, we are searching for the symbol to move to the next context. 
 
 ```
 struct symbol_search_result
@@ -334,7 +345,7 @@ void encode(ArithEncoder& Encoder, u32 Symbol)
 }
 ```
 
-The `encodeSymbol()` function is a wrapper that return `true` or `false` depending on whether the symbol was encoded or ESC. In the first case, we finish our task and can exit the loop, saving the context we used in `LastUsed` which will be needed in `update()`. If we were unlucky and had to encode ESC inside `encodeSymbol()`, we save the pointer to the child context and start the search again. The last step before searching in the child context is to mask all the symbols that we have seen.
+The `encodeSymbol()` function is a wrapper that return `true` or `false` depending on whether the symbol was encoded or ESC. In the first case, we finish our task and can exit the loop, saving the context we used in `LastUsed` which will be needed in the `update()`. If we were unlucky and had to encode ESC inside `encodeSymbol()`, we save the pointer to the child context and start the search again. The last step before searching in the child context is to mask all the symbols that we have seen.
 
 ```
 void updateExclusionData(context* Context)
@@ -369,7 +380,10 @@ b32 encodeSymbol(ArithEncoder& Encoder, context* Context, u32 Symbol)
 } 
 ```
 
-Inside, we receive a prob struct that has been filled and then pass it to AC. Calculating the necessary values to fill prob for encoding and decoding is similar to how it’s done in `SimpleOrder1AC`. However, now we must also handle following cases: the count of symbols can change for the context, symbols can be masked, and the special ESC symbol.
+Inside, we receive a `prob` struct that has been filled and then pass it to AC. Calculating the necessary values to fill `prob` for encoding and decoding is similar to how it was done in `SimpleOrder1AC`. However, now we must also handle following cases: 
+- the count of symbols can change for the context
+- symbols can be masked
+- special ESC symbol.
 
 ```
 b32 getEncodeProb(context* Context, prob& Prob, u32 Symbol)
@@ -401,9 +415,9 @@ b32 getEncodeProb(context* Context, prob& Prob, u32 Symbol)
 }
 ```
 
-From the beginning, we start searching for the symbol that we need while simultaneously calculating CDF[low] along the way. Just as a reminder, CDF[low] is equal to the sum of all symbol frequency that came before the symbol that we looking for. That’s why we break from the loop after finding it. Symbols that should not be counted are handled by performing a bitwise AND with their corresponding value in the `Exclusion->Data` array. This operation simply returns 0 if symbol was masked, keeping `CumFreqLo` unchanged.
+From the beginning, we start searching for the symbol that we need while simultaneously calculating CDF[low] along the way. Just as a reminder, CDF[low] is equal to the sum of all symbol frequency that came before the symbol that we looking for. That’s why we break from the loop after finding it. Symbols that should not be counted are handled by performing a bitwise AND with their corresponding value in the `Exclusion->Data` array. This operation simply returns 0 if symbol have been masked, keeping `CumFreqLo` unchanged.
 
-After that, we either have found the symbol or not. Let’s first take a look at the case when we haven’t found the symbol that we need in the context (as it’s just a few line of code). In that case, we need to encode ESC. If we haven’t broken from the loop, then `CumFreqLo` already hold the sum of frequency for all symbols that were not masked out in current context. But we count our last symbol as being ESC. That mean, to have the ability to unambiguously decode every symbol, our Prob.scale must look like bellow, if we didn’t mask out any symbol (that’s a case for encoding from CM(N)).
+After that, we either have found the symbol or not. Let’s first take a look at the case when we haven’t found the symbol that we need in the context (as it’s just a few line of code). In that case, we need to encode ESC. If we haven’t made `break` from the loop, then `CumFreqLo` already hold the sum of frequency for all symbols that were not masked out in current context. But we count our last symbol as being ESC. That mean, to have the ability to unambiguously decode every symbol, our Prob.scale must look like bellow, if we didn’t mask out any symbol (that’s a case for encoding from CM(N)).
 
 ```
 Prob.scale = Context->TotalCount + Context->EscapeFreq;
@@ -453,7 +467,7 @@ b32 getEncodeProb(context* Context, prob& Prob, u32 Symbol)
 }
 ```
 
-For finish `Prob.scale`, we do the same stuff as for `Prob.lo` at the beginning. However, this time we must start from `SymbolIndex + 1` and go to the end of the arrays. Also, this time we don’t need to do checks inside body of the loop. Currently, it turns out that if we encode our symbol in CM(N) for which `Exclusion->Data` has not been modified yet, we still spend CPU time executing operation with `Exclusion->Data`. This is certainly a drawback, and we will fix it later.
+For finishing `Prob.scale`, we do the same stuff as for `Prob.lo` at the beginning. However, this time we must start from `SymbolIndex + 1` and go to the end of the array. Also, this time we don’t need to do checks inside body of the loop. Currently, it turns out that if we encode our symbol in CM(N) in which `Exclusion->Data` has not been modified yet at all, we are spending CPU time executing operation with `Exclusion->Data`. This is certainly a drawback, and we will fix it later.
 
 The limit on the maximum value of CDF has not disappeared anywhere and is still equal to `FREQ_MAX_VALUE`, after exceeding which we do the same as in `SimpleOrder1AC`.
 
@@ -473,7 +487,7 @@ void rescale(context* Context)
 
 ### Encoding in CM(-1)
 
-After all these operations in the context search loop, when we have already broken from it, we do a check to see if we have encoded the symbol at least in CM(0) and if it should be encode it in CM(-1).
+After all these operations in the context search loop, when we have already broken from it, we do a check to see if we have encoded the symbol at least in CM(0) and if it should be encoded it in CM(-1).
 
 ```
 void encode(ArithEncoder& Encoder, u32 Symbol)
@@ -509,7 +523,7 @@ void encode(ArithEncoder& Encoder, u32 Symbol)
 }
 ```
 
-For encoding in CM(-1), we use `getEncodeProb()` and subtract 1 from encoded symbol so that `StaticContext` remains unchanged because inside `getEncodeProb()` we incremented it. However, we can actually omit the subtraction because during the execution of `getEncodeProb()` we mask symbols with their corresponding values in `Exclusion->Data`. This means that every symbol that was absent in CM(0) and then encoded in CM(-1) after `update()` execution will be added to CM(0) and will be masked at the next time we encode from CM(-1).
+For encoding in CM(-1), we use `getEncodeProb()` and subtract 1 from encoded symbol so that `StaticContext` remains unchanged because inside `getEncodeProb()` we have incremented it. However, we can actually omit the subtraction because during the execution of `getEncodeProb()` we mask symbols with their corresponding values in `Exclusion->Data`. This means that every symbol that was absent in CM(0) and then encoded in CM(-1) after `update()` execution will be added to CM(0) and will be masked at the next time we encode from CM(-1).
 
 Again this mystical `update()` function comes. We finally reached to it.
 
@@ -574,13 +588,13 @@ void update(u32 Symbol)
 }
 ```
 
-Let’s consider this by example. Assuming that the maximum context depth is 3. While searching for CM(3) \<abc\>, we discovered that the branch for this context starting from first symbol (‘a’) is missing. We saved this search result in `ContextStack[0]`. After that we couldn't find child CM(2) \<bc\> for the same reason and saved it in `ContextStack[1]`. However, CM(1) \<c\> is present but we couldn't find the symbol that we needed inside it, so it also goes to `update()` in `ContextStack[2]`.
+Let’s consider this by example. Assuming that the maximum context depth is 3. While searching for CM(3) \<abc\>, we discovered that the branch for this context starting from first symbol ‘a’ is missing. We saved this search result in `ContextStack[0]`. After that we couldn't find child CM(2) \<bc\> for the same reason and saved it in `ContextStack[1]`. However, CM(1) \<c\> is present but we couldn't find the symbol that we needed inside it, so it also goes to `update()` in `ContextStack[2]`.
 
-At the time of executing `update()`, we start building context from the lowest order CM, which is currently CM(1) \<c\>. We simply need to add the symbol to it as indicated by `Update->IsNotComplete == false`, and save it as `Prev`. This allows us set it as the child context for the next CM(2) \<bc\>. It’s possible that you might be confused with all these connections between contexts, as I was too. It may not be obvious why we can’t just construct CM(3) \<abc\> and designate each preceding context as child. We can’t do this because in this implementation, each branch of the context is represented is some sort as chain of parent contexts and child context (as I said at the beginning of this post “child” and “parent” is kind of wrong naming for this).
+At the time of executing `update()`, we start building context from the lowest order CM, which is currently CM(1) \<c\>. We simply need to add the symbol to it as indicated by `Update->IsNotComplete == false`, and save it as `Prev`. This allows us set it as the child context for the next CM(2) \<bc\>. It’s possible that you might be confused with all these connections between contexts, as I was too. It may not be obvious why we can’t just construct CM(3) \<abc\> and set each preceding context as a child. We can’t do this because in this implementation, each branch of a contexts is representing a chain of parent contexts and child context will be located actually on a different branch (althought “child” and “parent” is kind of wrong naming for this).
 
 ![](/assets/img/post/etr-enc-4/branches.png)
 
-As you can see from the image above, if we set CM(3) \<abc\> as the child for CM(2) \<ab\> after building it, it would be incorrect. The correct choice should be CM(2) \<bc\>.
+As you can see from the image above, if we set CM(3) \<abc\> as the child for CM(2) \<ab\> after building it, it would be incorrect. The correct choice must be CM(2) \<bc\>.
 
 ### Add missed symbol
 
@@ -637,7 +651,7 @@ void update(u32 Symbol)
 }
 ```
 
-In this case, `SubAlloc.realloc()` will perform reallocation only if we have exceeded the limit of available memory for the previously allocated block, It will ignore the value of `PreallocSymbol` if this block still has enough memory. For example, since previously we allocate memory for 2 `context_data` struct, when adding second symbol to the context,  `SubAlloc.realloc()` will immediately return the pointer that was passed as first argument to it. This behavior of the `realloc` function may not always be desirable, but it works for us. Next, we initialize the symbol, taking into account that `Context->TotalFreq` has increased, and then return the result.
+In this case, `SubAlloc.realloc()` will perform reallocation only if we have exceeded the limit of available memory for the previously allocated block. It will ignore the value of `PreallocSymbol` if this block still has enough memory. For example, since previously we have allocated memory for 2 `context_data` struct, when adding second symbol to the context, `SubAlloc.realloc()` will immediately return the pointer that was passed as first argument to it. This behavior of the `realloc` function may not always be desirable, but it works for us. Next, we initialize the symbol, taking into account that `Context->TotalFreq` has increased, and then return the result.
 
 ### Complete context branch
 
@@ -854,11 +868,11 @@ u32 decode(ArithDecoder& Decoder)
 }
 ```
 
-In the loop of context searching,  instead of `encodeSymbol()`, we use `decodeSymbol()` which after the decoding of regular symbol store it to `ResultSymbol`. If we encounter ESC during decoding in CM(-1), it indicates the end of the encoded stream, and as before, we assume that there will be no more data, so we don’t invoke `updateDecodeRange()`.
+In the loop of context searching, instead of `encodeSymbol()`, we use `decodeSymbol()` which after the decoding of regular symbol store it to `ResultSymbol`. If we encounter ESC during decoding in CM(-1), it indicates the end of the encoded stream, and as before, we assume that there will be no more data, so we don’t invoke `updateDecodeRange()`.
 
 ### Decode obtained frequency
 
-The `decodeSymbol()` function is also created for convenience, and nothing special happens within it.
+The `decodeSymbol()` function is also created for convenience, and nothing special happens inside it.
 
 ```
 b32 decodeSymbol(ArithDecoder& Decoder, context* Context, u32* ResultSymbol)
@@ -894,14 +908,14 @@ decode_symbol_result getSymbolFromFreq(ArithDecoder& Decoder, context* Context)
 }
 ```
 
-We can’t start searching for a symbol until we perform `getCurrFreq()`. To obtain the correct from it, we need correctly determine with respect to which `Prob.scale` value the symbol was encoded. During encoding, we did it like this:
+We can’t start searching for a symbol until we perform `getCurrFreq()`. To obtain the correct value from it, we need correctly determine with respect to which `Prob.scale` value the symbol was encoded. During encoding, we did it like this:
 
 ```
 context_data* Data = Context->Data + i;
 Data->Freq & Exclusion->Data[Data->Symbol];
 ```
 
-This mean that the value of `Prob.scale` may not have been equal to `Context->TotalCount + Context->EscapeFreq`. Thus, we first need to obtain the current sum of TotalCount, taking into account masked frequencies, and then add it to EscapeFreq, which was always accounted for during encoding.
+This mean that the value of `Prob.scale` may not have been equal to `Context->TotalCount + Context->EscapeFreq`. Thus, we first need to obtain the current sum of `TotalCount`, taking into account masked frequencies, and then add it to `EscapeFreq`, which was always accounted during encoding.
 
 ```
 u32 getExcludedTotal(context* Context)
@@ -950,7 +964,7 @@ decode_symbol_result getSymbolFromFreq(ArithDecoder& Decoder, context* Context)
 }
 ```
 
-We do the same thing as in `SimpleOrder1AC::getSymbolFromFreq()`, but now we also mask each symbol. Another approach, which may seem more correct, is to iterate through `Context->Data` once, calculating `TotalCount` with `Exclusion` taken into account, and recodingthe index or pointer to the non=masked symbols in an array. Then, iterate only through these symbols to find `CumFreq > DecodeFreq`. This also make sense! For data that compress well and has a small `SymbolCount`, I didn’t observe a difference in execution speed. However, for data with poor context dependencies, the approach from the example above is faster.
+We do the same thing as in `SimpleOrder1AC::getSymbolFromFreq()`, but now we also mask each symbol. Another approach, which may seem more correct, is to iterate through `Context->Data` once, calculating `TotalCount` with `Exclusion` taken into account, and during that process recoding the index or pointer to the nonmasked symbols in an array. Then, iterate only through these symbols to find `CumFreq > DecodeFreq` (you will find example inside commit for this part). This also make sense! For data that compress well and has a small `SymbolCount`, I didn’t observe a difference in execution speed. However, for data with poor context dependencies, the approach from the example above is faster.
 
 ![](/assets/img/post/etr-enc-4/utill1.png)
 _shown approach for poor context data_
@@ -958,7 +972,7 @@ _shown approach for poor context data_
 ![](/assets/img/post/etr-enc-4/utill2.png)
 _described approach for poor context data_
 
-Here “Cycles of N Ports” indicates, as Intel states in the tooltip, the fraction of time when CPU perform N uops in one cycle, rather than the specific ports on which the uop instruction are executed, which you could see [here](https://uops.info/table.html). A classic illustration of CPU’s OOO. Maybe on older CPUs, this approach would have a greater impact on executing speed. Not sure which method is best for PPM style of data, just decided make measure from curiosity reason and show it to you.
+Here “Cycles of N Ports” indicates, as Intel states in the tooltip, the fraction of time when CPU perform N uops in one cycle, rather than the specific ports on which the uop instruction are executed, which you could see [here](https://uops.info/table.html). A classic illustration of CPU’s OOO. Maybe on older CPUs, this approach would have a greater impact on executing speed. Not sure which method is best for PPM style of data, just decided to make measure from curiosity reason and show it to you.
 
 ```
 decode_symbol_result getSymbolFromFreq(ArithDecoder& Decoder, context* Context)
@@ -998,7 +1012,7 @@ Since we have already calculated `Prob.scale`, there is no need to calculate any
 
 ## Encoding EOS
 
-And finally, the last thing is encoding the end of the stream. We could do this by simply passing ESC to the `encode()` function, but we can perform an optimization that no one ask for by throwing out the extra code for such a case and writing it like this:
+And finally, the last thing is encoding the end of the stream. We could do this by simply passing ESC to the `encode()` function, but we can perform an optimization that no one ask for by throwing away the extra code for such case and writing it like this:
 
 ```
 void encodeEndOfStream(ArithEncoder& Encoder)
@@ -1057,7 +1071,7 @@ s – the total sum of all symbol's frequency in the context;
 1/(1 + s) 
 ```
 
-It’s cool that we provide a wider range for encoding regular symbols, but as can be seen, when using PPM for data without stable contextual dependencies, it can has drawbacks. In fact, PPM is not suitable for such data at all, but we still can improve our results. We will skip the PPMB method and directly look at PPMC, which essentially has the following form.
+It’s cool that we provide a wider range for encoding regular symbols, but as result, when using PPM for data without stable contextual dependencies, it can has drawbacks. In fact, PPM is not suitable for such data at all, but we still can improve our results. We will skip the PPMB method and directly look at PPMC, which essentially has the following form.
 
 ```TEXT
 u – count of unique symbols in context;

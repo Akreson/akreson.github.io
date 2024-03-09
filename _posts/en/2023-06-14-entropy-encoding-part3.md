@@ -88,11 +88,11 @@ class BasicACByteModel
 {
     u16 CumFreq[258]; // (0...255 = 256) + end_of_stream + total_cum_freq
 
-    static constexpr u32 CumFreqArraySize = ArrayCount(CumFreq);
-    static constexpr u32 TotalIndex = CumFreqArraySize - 1;
+    constexpr u32 CumFreqArraySize = ArrayCount(CumFreq);
+    constexpr u32 TotalIndex = CumFreqArraySize - 1;
 
 public:
-    static constexpr u32 EndOfStreamSymbolIndex = CumFreqArraySize - 2;
+    constexpr u32 EndOfStreamSymbolIndex = CumFreqArraySize - 2;
 
     BasicACByteModel()
     {
@@ -284,10 +284,10 @@ class SimpleOrder1AC
     u16 Total[257];
     u32 PrevSymbol;
 
-    static constexpr u32 FreqArraySize = ArrayCount(Freq[0]);
+    constexpr u32 FreqArraySize = ArrayCount(Freq[0]);
 
 public:
-    static constexpr u32 EndOfStreamSymbolIndex = FreqArraySize - 1;
+    constexpr u32 EndOfStreamSymbolIndex = FreqArraySize - 1;
 
     SimpleOrder1AC()
     {

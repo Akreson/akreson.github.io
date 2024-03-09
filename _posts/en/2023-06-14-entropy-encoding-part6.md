@@ -7,9 +7,11 @@ tags: [arithmetic coding, compression model, PPM, SEE]
 
 ## Introduction
 
-At the current moment, `EscapeFreq` for a specific context equals the number of symbols in that context. This leads to the problem of assigning ESC codes that are either too short or too long in same cases. To make the estimation for the ESC symbol more precise, we need in some way to collect statistics about successful and unsuccessful symbol encoding cases dynamically. If we use PPM, we expect a clear correlation between Order-N contexts, so we will collect statistic about encoding success not for each context separately, but for the entire model as a whole. This way, similar contexts that may not occur frequently individually but occur regularly in the overall will receive a more accurate estimation. Thus, we have our main model, that collect statistics for our data, and a secondary model that adjust it based on the data obtained by observing other contexts.
+At the current moment, `EscapeFreq` for a specific context equals the number of symbols in that context. This leads to the problem of assigning ESC codes that are either too short or too long in same cases. To make the estimation for the ESC symbol more precise, we need in some way to collect statistic about successful and unsuccessful symbol encoding cases dynamically. If we use PPM, we expect a clear correlation between Order-N contexts, so we will collect statistic about encoding success not for each context separately, but for the entire model as a whole. This way, similar contexts that may not occur frequently individually but occur regularly in the overall will receive a more accurate estimation. Thus, we have our main model, that collect statistics about our data, and a secondary model that adjust it based on the data obtained by observation on contexts.
 
 Such a method of estimation the ESC symbol probability called SEE (Secondary Escape Estimation). One of the first who propose a working version of this idea was Charles Bloom in his work on PPMZ [1][2] back in 1996, as far as I understand. If you’re interested in the topic of PPM, you definitely need to take a look at a more advanced implementation of it. We will explore another method of implementing SEE called PPMII, proposed by Dmitry Shkarin in 2001[3]. You might have seen implementation of this method under the name PPMd. PPMII can be considered as one of the last significant advancements in PPM (I might be mistaken, but that’s the impression I have, as it is mentioned most frequently on the Internet), which is why I decided stop on it. The author of PPMII is an absolutely non-public person, so can’t provide any information about him. I was only able to find examples of implementation on this [website](http://www.compression.ru/ds/); any mentions of PPMII seem to refer back to this site. There are various versions of the implementation by the author that you can explore. During the writing of this article, I came across an implementation of the J version (sort of latest)[4] by person who happens to be the administrator of what is presumably the main forum dedicated to compression [encode.su](http://encode.su) (and if believe from what I found he also countryman of mine, that just was cool for me to find out). So you can check this implementation of J version, maybe you will find it more readable or if you don’t trust website that I’ve referred first. The difference between the PPMd method lies in how the contexts are quantized and how the data is adapted within them. The author made these choices based on his statistical research, and as far as I understand, it was targeted for PPM-style data (e.g., text), but data that doesn't fit perfectly was also taken into account. This means that in theory, you can optimize modeling of SEE for a specific type of data, taking PPMd as an example. This sound cool, by I doubt that it is useful in practice. That’s why all constant number that you will see you should be perceive as an example and not the truth of how SEE should be done. The method of context building from the previous part was obviously didn’t invented by myself; I just accidentally discovered it when I was looking at the PPMd implementation as a bonus. I didn’t mention this earlier to not disturb reader on the SEE subject. Here we will look at the F version, explore new techniques, I will try to provide some comments. In the end, I hope you will understand the idea of SEE.
+
+## SEE data
 
 Let’s look on the image from the previous part with randomly placed MinContext on it.
 
@@ -26,8 +28,6 @@ A complete list of parameters by which we can divide contexts based on the signi
 We can also consider the order of the context, but the PPMII style of SEE doesn’t use it, unlike PPMZ. To obtain useful information from the gathered statistics, we don't use every possible combination of values from the enumerated parameters, but rather quantize them to a reasonable range. The more a parameter affects the accuracy of prediction of exiting from context event, the more useful it will be to have more values for it after quantization.
 
 We will introduce several new functions for encoding and decoding, but this time I will not show code for decoding to save time and space and because it is 90% the same as the encoding code. So if you have already read the previous two articles on PPM, you will easily understand the decoding part without my comments.
-
-## SEE data
 
 We start be adding a pointer to the SEE class and allocating memory for it separately in constructor.
 
@@ -47,7 +47,7 @@ class PPMByte
 }
 ```
 
-It was challenging to choose the right order of presenting the material so that it flows smoothly. Thus, let’s first examine the structure and initialization of the static data for the new `SEEState` class. The rest will be overgrown with details in the course of this part.
+It was challenging to choose the right order of presenting the material so that it flows smoothly. So, let’s first examine the structure and initialization of the static data for the new `SEEState` class. The rest will be overgrown with details in the course of this part.
 
 ```
 struct see_context
@@ -150,7 +150,7 @@ inline see_bin_context& getBinContext(context* PPMCont)
 }
 ```
 
-As you can see now, all 128 values of the BinContext array are directly mapped to frequency counter of the symbol in binary context. The frequency counter for symbol in binary context will increase by 1 instead of 4, which is why we will not jump over values in the array. If you remember, for regular contexts, we call `rescale()` if at least one symbol exceeds `Freq > 124`, but we make an exception for binary context and will not do rescale for them. Each even CountIndex correspond to a previous unsuccessful encoding attempt, and each odd to a successful one. The `InitBinEsc` array is used precisely to assign more accurate initial values for each case. The `FREQ_MAX_VALUE` value was not changed and still equal to 2^14. The first graphic show value for even values and second for odd.
+As you can see now, all 128 values of the `BinContext` array are directly mapped to frequency counter of the symbol in binary context. The frequency counter for symbol in binary context will increase by 1 instead by 4, which is why we will not jump over values in the array. If you remember, for regular contexts, we call `rescale()` if at least one symbol exceeds `Freq > 124`, but we make an exception for binary context and will not do rescale for them. Each even `CountIndex` correspond to a previous unsuccessful encoding attempt, and each odd to a successful one. The `InitBinEsc` array is used precisely to assign more accurate initial values for each case. The `FREQ_MAX_VALUE` value was not changed and still equal to 2^14. The first graphic show value for even values and second for odd.
 
 ![](/assets/img/post/etr-enc-6/bin_non_s.png)
 _PrevSuccess == 0_
@@ -243,7 +243,7 @@ b32 PPMByte::getEncodeProbBin(prob& Prob, u32 Symbol)
 }
 ```
 
-I just mentioned how the probability for the symbol and ESC is set, and that we increment the counter by 1. However, I didn’t explain what happens next with the SEE context value. We begin adapting it!
+I just mentioned how the probability for the symbol and ESC is set, and that we increment the counter by 1. However, I didn’t explain what happens next with the SEE context value. We're begin adapting it!
 
 ```
 u8 SEEState:getBinMean(u16 Scale)
@@ -262,15 +262,11 @@ We calculate the average value of Scale / TestCount, where TestCount is fixed an
 (0b101100 + 0b100) >> 4 = 0b11
 ```
 
-The larger the value of `BinCtx.Scale`, the smaller the difference `INTERVAL – MEAN`. Due to rounding up, we can fix maximum value of `BinCtx.Scale` because when its value rounds up to `FREQ_MAX_VALUE`, the added value will be 0. In the case of an unsuccessful encoding attempt, on the contrary, the larger the value of `BinCtx.Scale`, the faster we expand the range for encoding ESC symbol. But here’s adds one more detail. If we encode ESC, it mean that after execution of `update()`, this context will no longer be binary. The smaller value of `BinCtx.Scale` at this moment, the more likely we will see a new symbol in this context in the future, and vice versa. For this reason, we initialize the value of `InitEsc` to represent the portion that ESC occupies in the TotalFreq value. So now:
-
-```TEXT
-TotalFreq = TotalSymbolFreq + EscapeFreq;
-```
+The larger the value of `BinCtx.Scale`, the smaller the difference `INTERVAL – MEAN`. Due to rounding up, we can fix maximum value of `BinCtx.Scale` because when its value rounds up to `FREQ_MAX_VALUE`, the added value will be 0. In the case of an unsuccessful encoding attempt, on the contrary, the larger the value of `BinCtx.Scale`, the faster we expand the range for encoding ESC symbol. But here’s adds one more detail. If we encode ESC, it mean that after execution of `update()`, this context will no longer be binary. The smaller value of `BinCtx.Scale` at this moment, the more likely we will see a new symbol in this context in the future, and vice versa. For this reason, we initialize the value of `InitEsc` to represent the portion that ESC occupies in the `TotalFreq` value.
 
 ### non-binary without masked
 
-If we start from a non-binary context from the beginning, we check the first symbol (further, we change that symbol, which is called `rescale()` will be moved to the first place in the array).
+If we start from a non-binary context from the beginning, we check the first symbol (latter symbol that called `rescale()` will be moved to first place in the list).
 
 ```
 b32 getEncodeProbLeaf(prob& Prob, u32 Symbol)
@@ -388,11 +384,11 @@ b32 getEncodeProbLeaf(prob& Prob, u32 Symbol)
 }
 ```
 
-And it differs in that we swap `context_data` if symbol that we have successfully encoded has a frequency greater than the previous one. If the required symbol was not found, we add symbol to `Exclusion` array and save its count for the next step. After that, we go down the chain of child context and encode the symbol or ESC in `getEncodeProb()`.
+And it differs in that we swap `context_data` if symbol that we have successfully encoded has a frequency greater than the previous one. If the required symbol was not found, we add symbol to `Exclusion` array and save total count of symbol in this context for the next step. After that, we go down the chain of child context and encode the symbol or ESC in `getEncodeProb()`.
 
 ### non-binary with masked
 
-In this case, we will again use the value obtained from SEE context, but only now it is for non-binary context. Let’s look at how we search for and get the value from `see_context`:
+In this case, we will again use the value obtained from SEE context, but now it is for non-binary context. Let’s look at how we search and get the value from `see_context`:
 
 ```
 u16 SEEState::getMean(see_context* Context)
@@ -438,7 +434,7 @@ First, we divide a context into two types based on the count of unmasked symbols
 
 ![](/assets/img/post/etr-enc-6/ctx_example.png)
 
-Then each group is further divided into two subgroups based on the ratio of (TotalSymbolFreq + EscapeFreq) to the number of symbols in the context. Why should `TotalFreq` be 11 times greater than `SymbolCount`? That’s how the author decided. If you think about it, it’s not that much. For example, if we have 10 symbols in the context with ESC it’s ~10 for each symbol if they had equal frequency value. Initially, I thought that by doing this, the author was trying to separate contexts where the statistics do not reflect a clearly pattern. However, it seems more likely that it is the ratio of average symbol frequency to the number of exits from the context (that indicated by the symbol count) that is being checked. This is also what the author writes about in the section on evaluating the exit probability of such contexts. And finally, there is the ration of the number of masked symbols to the unmasked symbols.
+Then each group is further divided into two subgroups based on the ratio of (TotalSymbolFreq + EscapeFreq) to the number of symbols in the context. Why should `TotalFreq` be 11 times greater than `SymbolCount`? That’s how the author decided. If you think about it, it’s not that much. For example, if we have 10 symbols in the context with ESC it’s ~10 points for each symbol if they had equal frequency value. Initially, I thought that by doing this, the author was trying to separate contexts where the statistics do not reflect a clearly pattern. However, it seems more likely that it is the ratio of average symbol frequency to the number of exits from the context (that indicated by the symbol count) that is being checked. This is also what the author writes about in the section on evaluating the exit probability from such contexts (what I get from another run through paper). And finally, there is the ration of the number of masked symbols to the unmasked symbols.
 
 We only add SEE usage to the body of the function:
 
@@ -475,7 +471,7 @@ b32 getEncodeProb(prob& Prob, u32 Symbol)
 
 For binary context, the value `see_bit_context` reflects the accumulated statistics for a symbol in the current context, and we use the average value for continuous scaling of this probability.
 
-In the case of non-binary contexts, the average value obtained from `see_context` is used only to determine the proportion occupied by ESC in the total sum `Prob.scale`. This value is decreased by `MEAN` if the symbol was encoded and increased by `MaskedTotalSymbolFreq + MEAN` at failed attempt. That is, the smaller the value of `Sum` in `see_context`, the smaller the `MEAN` value will be, the smaller the range ESC will occupy. The `Shift` value is not static as in the case of `see_bin_context`. During the `update()` call, we will update the value of `Count` for `SEE->LastUsed`. The way of how this happens has also changed between different versions.
+In the case of non-binary contexts, the average value obtained from `see_context` is used only to determine the proportion occupied by ESC in the total sum of `Prob.scale`. This value is decreased by `MEAN` if the symbol was encoded and increased by `MaskedTotalSymbolFreq + MEAN` at failed attempt. That is, the smaller the value of `Sum` in `see_context`, the smaller the `MEAN` value will be, the smaller the range ESC will occupy. The `Shift` value is not static as in the case of `see_bin_context`. During the `update()` call, we will update the value of `Count` for `SEE->LastUsed`. The way of how this happens has also changed between different versions.
 
 ```
 void SEEState::updateLastUsed(void)
@@ -511,8 +507,7 @@ But if the `Sym` were equal to 4048:
 
 ## Update
 
-When adding new symbols in the `update()` function, the initial frequency of the symbol in the context will now be assigned adaptively based on the weighting of certain values. For you, as well as for me, if you have recently become interested in compression, it may not be clear why certain coefficients are calculated in a particular way and not in other. However, we can still at least look at how it can be done for ourselves. It’s entirely possible that there is no precise answer here, and the parameters and the method of their weighting reflect the author statistical research. All of this changes between versions also.
-
+When adding new symbols in the `update()` function, the initial frequency of the symbol in the context will now be assigned adaptively based on the weighting of certain values. For you, as well as for me, if you have recently become interested in compression, it may not be clear why certain coefficients are calculated in a particular way and not in another. However, we can still at least look at how it can be done for ourselves. It’s entirely possible that there is no precise answer here, and the parameters and the method of their weighting reflect the author statistical research. All of this changes between PPMd versions.
 
 Beginning `update()` by defining the starting coefficients and updating `SEE->LastUsed`.
 
@@ -570,7 +565,7 @@ void update()
 }
 ```
 
-If `MinContext` is a binary context, then, the frequency of the new symbol will be equal to the frequency of the recently encoded symbol. Otherwise, we check whether the frequency of the encoded symbol occupies a significant portion of the total symbol frequency in `MinContext`, and based on this, we choose the initial frequency to assign. In the next step, when adding a symbol to non-empty contexts, we first calculate the `TotalFreq` increment from exiting the context.
+If `MinContext` is a binary context, then, the frequency of the new symbol will be equal to the frequency of the recently encoded symbol. Otherwise, we check whether the frequency of the encoded symbol occupies a significant portion of the total symbol frequency in `MinContext`, and based on this, we choose the initial frequency to assign. In the next step, when adding a symbol to non-empty contexts, we first calculate the `TotalFreq` increment from exiting the context event.
 
 ```
 void update()
@@ -708,7 +703,7 @@ void rescale(context* Context)
 }
 ```
 
-Starting with that, we add a bonus to the symbol called `rescale()` and move it to the first position in the context’s symbol array if it’s not already there. `MaxCtxAdder` is the value that will prevent the symbol frequency from becoming less than 1 if it’s not in the CM(N) context.
+Starting with that, we add a bonus to the symbol that called `rescale()` and move it to the first position in the context’s symbol array if it’s not already there. `MaxCtxAdder` is the value that will prevent the symbol frequency from becoming less than 1 if it’s not in the CM(N) context.
 
 ```
 void rescale(context* Context)

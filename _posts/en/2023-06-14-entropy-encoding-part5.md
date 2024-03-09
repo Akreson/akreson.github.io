@@ -7,7 +7,7 @@ tags: [arithmetic coding, compression model, PPM]
 
 ## Initializing PPM
 
-The method of context building from previous part is relatively simply. All this branches of contexts can be understood quite intuitively, and it not complicated to show them in an image. That’s why I decided to show it first to familiarize you with PPM. But during the encoding of each symbol, we should start searching from CM(0) and search for the symbol in each of the context along the way. In this part, we will look at another way how we can handle the building of PPM context tree. It is less intuitively, so if you struggle to understand why it works, that’s okay.
+The method of context building from the previous part is relatively simply. All this branches of contexts can be understood quite intuitively, and it not complicated to show them in an image. That’s why I decided to show it first to familiarize you with PPM. But during the encoding of each symbol, we should start searching from CM(0) and search for the symbol in each of the context along the way. In this part, we will look at another way of how we can handle the building of PPM context tree. It is less intuitively, so if you struggle to understand why it works, that’s okay.
 
 I have two pieces of good news right ahead. First, the relationship between the image count and the lines of code in this part will be greater. In fact, we will rewrite only three function. The second good news is that we can through away some code that we spent time on in the previous part right at the beginning. Specifically, we no longer need the following functions and structs:
 
@@ -127,7 +127,7 @@ void encode(ArithEncoder& Encoder, u32 Symbol)
 }
 ```
 
-`MinContext` points to the current context we are using for encoding, allowing us to immediately attempt to encode a symbol. We no longer need to pass a pointer to the context in `getEncodeProb()` and `getSymbolFromFreq()` since it is already stored in `MinContext`. If the first attempt to encode a symbol fails, we start descending through the chain of child context to search suitable context to encode the symbol. You can imagine it as each branch of the context represents a sequence of child contexts by default now. The condition of the first while loop is clear I think: if encoding was successful than we break out of the loop. In the loop of searching the new `MinContext`, we check if the value of `Order0->Prev` has been assigned to `MinContext` and ignore the context if it has the same number of symbols as the previous `MinContext`. This is because it indicates that both contexts have the same `context_data` values within them. The value of `LastMaskedCount` is set at ESC encoding/decoding in `getEncodeProb()` and `getSymbolFromFreq()`.
+`MinContext` points to the current context we are using for encoding, allowing us to immediately attempt to encode a symbol. We no longer need to pass a pointer to the context in `getEncodeProb()` and `getSymbolFromFreq()` since it is already stored in `MinContext`. If the first attempt to encode a symbol fails, we start descending through the chain of child context to search suitable context to encode the symbol. You can imagine it as each branch of the context represents a sequence of child contexts by default now. The condition of the first while loop is clear I think: if encoding was successful than we break out of the loop. In the loop of a context searching we check if the value of `Order0->Prev` has been assigned to `MinContext` and ignoring a context if it has the same number of symbols as the previous `MinContext`. This is because it indicates that both contexts have the same `context_data` values within them. The value of `LastMaskedCount` is set at ESC encoding/decoding in `getEncodeProb()` and `getSymbolFromFreq()`.
 
 ```
 b32 getEncodeProb(prob& Prob, u32 Symbol)
@@ -151,9 +151,9 @@ b32 getEncodeProb(prob& Prob, u32 Symbol)
 }
 ```
 
-I moved `updateExclusionData()` into the functions that calculate `Prob` struct because it’s obvious in those functions when we’re dealing with ESC.
+I moved `updateExclusionData()` into the functions that calculate `Prob` struct because of the way how we exit from context searching loop now.
 
-The condition `if (MinContext == MaxContext)` means that we’re in the state when we don’t need to add context branches or add new symbol to existing contexts. That’s why in this case, we can skip the `update()` and simply move to the next parent context.
+The condition `if (MinContext == MaxContext)` means that we’re in the state when we don’t need to add context branches or add new symbol to existing contexts. That’s why in this case, we can skip the `update()` and simply move to the next parent context. Why it is the case you will see in futher example.
 
 ### Decoding
 
@@ -194,11 +194,11 @@ u32 decode(ArithDecoder& Decoder)
 }
 ```
 
-We changed the calls to `getEncodeProb()` and `Encoder.encode()` to `getSymbolFromFreq()` and `Decoder.updateDecodeRange()`. Also, here we descend to the child context until we keep getting ESC symbol.
+We changed the calls to `getEncodeProb()` and `Encoder.encode()` to `getSymbolFromFreq()` and `Decoder.updateDecodeRange()`. Also, we descend here to the child context until we keep getting ESC symbol.
 
 ## New update scheme
 
-The hardest part begins in `update()`.The idea is to construct new parents contexts for all contexts between `MinContext` and `MaxContext` and properly assign to each one the appropriate child context. If we didn’t find the symbol in chain of child contexts, we add it to all contexts that between `MinContext` and `MaxContext`. For example, if encoded the symbol ‘q’ in CM(0) and before this our CM(3) from which we descend was \<abc\>, then we initialize the symbol ‘q’ in CM(3) \<abc\>, CM(2) \<bc\>, CM(1) \<c\>.
+The hardest part begins in `update()`.The idea is to construct new parents contexts for all contexts between `MinContext` and `MaxContext` and properly assign to each one the appropriate child context. If we didn’t find the symbol in chain of child contexts, we add it to all contexts that between `MinContext` and `MaxContext`. For example, if we encoded a symbol ‘q’ in CM(0) and before this our CM(3) from which we descend was \<abc\>, then we initialize the symbol ‘q’ in CM(3) \<abc\>, CM(2) \<bc\>, CM(1) \<c\>.
 
 ```
 void update()
@@ -295,6 +295,7 @@ context* allocContext(context_data* From, context* Prev)
 
     return New;
 }
+
 void update()
 {
     .../* init context with SymbolCount == 0, alloc symbol for other context,
@@ -327,11 +328,11 @@ void update()
 }
 ```
 
-Instead of trying to describe what happens in this part of `update()`, let’s look at an example of context building. Below is a figure of the context tree after processing the first symbol [1]21212212.
+Instead of trying to describe what happens in this part of `update()`, let’s look at an example of context building. Below is a picture of the context tree after processing the first symbol [1]21212212.
 
 ![](/assets/img/post/etr-enc-5/table2.png)
 
-During the encoding of the first symbol ‘1’, descended to CM(0), which `MinContext` points to. Before execution `update()` the `MaxContext` as was shown in the first image. After all previous operation, `ContextAt == MinContext`. `LastEncSym` points to the symbol in CM(0) for which `LastEncSym->Next` was not set yet. Hence, the first things we do is perform the following:
+During the encoding of the first symbol ‘1’, descended to CM(0), which `MinContext` points to now. After all previous operation, `ContextAt == MinContext`. `LastEncSym` points to the symbol in CM(0) for which `LastEncSym->Next` was not set yet. Hence, the first things we do is perform the following:
 
 ```
 ContextAt = allocContext(LastEncSym, ContextAt);
@@ -339,13 +340,13 @@ ContextAt = allocContext(LastEncSym, ContextAt);
 
 In this case, after this action, we link `LastEncSym->Next` with CM(1) <1> and at the same time set CM(0) as its child.
 
-During the execution of `while (--StackPtr != ContextStack)`, we continue building contexts and linking them between themselves. When we reach the first element of `ContextStack`, the condition will not be satisfied, and we break from the loop. As I understand it, this always be the case for CM(N) context in order to have ability to link them together.
+During the execution of `while (--StackPtr != ContextStack)`, we continue building contexts and linking them between themselves. When we reach the first element of the `ContextStack` array, the condition will not be satisfied, and we break from the loop. As I understand it, this always be the case for CM(N) context in order to have ability to link them together.
 
 For the next symbol 1[2]1212212, we do everything by analogy. Only now `LastEncSym` points to the symbol ‘2’ in CM(0), so I skip this step and move on to show how the context tree will look like at the next symbol 12[1]212212.
 
 ![](/assets/img/post/etr-enc-5/table3.png)
 
-This time, after symbol was encoded the symbol, we already had a parent context for `LastEncSym`, so we perform:
+This time, after symbol was encoded, we already had a parent context for `LastEncSym`, so we perform:
 
 ```
 ContextAt = MinContext = LastEncSym->Next;
@@ -368,7 +369,7 @@ if (MinContext == MaxContext)
 }
 ```
 
-Skip `update()` and set `MinContext` and `MaxContext` to CM(3) \<212\>. During the encoding of 12121[2]212, we again have to go down to CM(0) because ‘2’ did not occur in any of the contexts CM(3) \<212\>, CM(2) \<12\>, CM(1) \<2\>.
+Skip `update()` and set `MinContext` and `MaxContext` to CM(3) \<212\>. During the encoding of 12121[2]212, we again have to go down to CM(0) because ‘2’ did not occur in any of these contexts CM(3) \<212\>, CM(2) \<12\>, CM(1) \<2\>.
 
 ![](/assets/img/post/etr-enc-5/table6.png)
 
@@ -426,6 +427,6 @@ if (MatchSymbol->Freq > MAX_FREQ)
 | pic       | 1.21  |    513216 | 91913       | 1.433 | 82483.1   | 9428.5     |
 | Intel.pdf | 7.955 | 26192768  | 25913696    | 7.914 | 22067691.4| 3844137.5  |
 
-From one point of view, if we look at `Sym` column, we can see that in some cases we really become spend fewer bytes for symbol encoding. But at the same time, ESC encoding becomes more expensive. Not to mention that the `pic` became almost 2 times larger! If we would to call `rescale()` at `TotalFreq >= 16384`, the result would not be better. At this stage, this change has not provided any benefits. When using PPM, encoding ESC symbol becomes somewhat of an obstacle in achieving better compression. We will see what can be done with this in the next part.
+From one point of view, if we look at `Sym` column, we can see that in some cases we really become spend fewer bytes for symbol encoding. But at the same time, ESC encoding becomes more expensive. Not to mention that the `pic` became almost 2 times larger! If we would call `rescale()` at `TotalFreq >= 16384`, the result would not be better. At this stage, this change has not provided any benefits in term of compression size. When using PPM, encoding ESC symbol becomes somewhat of an obstacle in achieving better compression. We will see what can be done with this in the next part.
 
 [Source code](https://github.com/Akreson/compression_tests/tree/eca3e71b2001cf7143cd6bb59c33d670a7e20a3c) for this part.
