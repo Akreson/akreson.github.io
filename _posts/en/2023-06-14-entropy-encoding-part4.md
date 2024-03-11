@@ -2,7 +2,7 @@
 title: "Entropy coding by a beginner for beginners - Part 4: Basic PPM"
 date: 2023-06-14 00:00:02 +0200
 categories: [compression]
-tags: [arithmetic coding, compression model, PPM]
+tags: [arithmetic coding, compression, PPM]
 ---
 
 ## About PPM

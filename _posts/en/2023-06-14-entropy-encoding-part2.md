@@ -2,7 +2,7 @@
 title: "Entropy coding by a beginner for beginners - Part 2: Arithmetic Coding"
 date: 2023-06-14 00:00:01 +0200
 categories: [compression]
-tags: [huffman, arithmetic coding]
+tags: [huffman, arithmetic coding, compression]
 math: true
 ---
 

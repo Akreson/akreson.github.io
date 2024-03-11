@@ -2,7 +2,7 @@
 title: "Entropy coding by a beginner for beginners - Part 1: Code Length"
 date: 2023-06-14 00:00:00 +0200
 categories: [compression]
-tags: [code length, huffman]
+tags: [code length, huffman, compression]
 math: true
 ---
 

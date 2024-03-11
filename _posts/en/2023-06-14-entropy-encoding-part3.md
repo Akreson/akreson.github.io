@@ -2,7 +2,7 @@
 title: "Entropy coding by a beginner for beginners - Part 3: Simple data models"
 date: 2023-06-14 00:00:02 +0200
 categories: [compression]
-tags: [arithmetic coding, compression model]
+tags: [arithmetic coding, compression]
 math: true
 ---
 
