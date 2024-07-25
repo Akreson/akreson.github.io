@@ -11,7 +11,6 @@ baseurl: ""
 # If it has the same name as one of the files in folder `_data/locales`, the layout language will also be changed,
 # otherwise, the layout language will use the default value of 'en'.
 lang: en
-#languages: [en, ua]
 languages: [en]
 per_page: 10
 per_page_float: 10.0
@@ -26,7 +25,7 @@ title: Akreson # the main title
 tagline: Blog for programmers # it will display as the sub-title
 
 description: >- # used by seo meta and the atom feed
-  Blog about programming, C++, algorithm, low-level stuff.
+  Blog about programming, C++, algorithms, optimization and low-level stuff.
 
 # fill in the protocol & hostname for your site, e.g., 'https://username.github.io'
 url: 'https://akreson.github.io'
@@ -40,7 +39,7 @@ twitter:
 social:
   # Change to your full name.
   # It will be displayed as the default author of the posts and the copyright owner in the Footer
-  name: Oleksii But
+  #name: Oleksii But
   email: 
   links:
     # The first element serves as the copyright owner's link
