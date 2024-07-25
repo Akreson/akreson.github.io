@@ -32,7 +32,7 @@ $$ p_i = \frac{1}{2^{l_i}}; \; 2^{l_i} = \frac{1}{p_i}; \; l_i = log_2 \frac{1}{
 
 You can think of **p** as the probability that it generally is. Let’s consider an example where we have Huffman codes for some symbols.
 
-![](/assets/img/post/etr-enc-1/log.png)
+![](/assets/img/post/etr-enc-1/log.png){: w="300"}
 
 Checking it:
 
@@ -66,11 +66,11 @@ $$D = (L - H) / H$$
 
 For the source of information from pic.1, D = 0. Let’s look at the next example with a more skewed probability distribution:
 
-![](/assets/img/post/etr-enc-1/skew.png)
+![](/assets/img/post/etr-enc-1/skew.png){: w="300"}
 
 In this case, L = 1.25, H = 0.9, and D = 0.39 or 39%. 
 
-![](/assets/img/post/etr-enc-1/code_len_ua.png)
+![](/assets/img/post/etr-enc-1/code_len_en.png)
 
 The graphic above only shows the correspondence between a code length and a given probability, and it does not tell the whole story. By using Huffman for encoding, we “round up” our probability toward closest free slot of probability of $2^{-n}$. That it, the larger our alphabet is, and/or the closer probability of each symbol will be to $2^{-n}$, the more optimal Huffman codes will be for this case (you can check [this](http://fastcompression.blogspot.com/2015/07/huffman-revisited-part-1.html) post of Yan Collet, author of [zstd](https://github.com/facebook/zstd), for some addition info about this).
 

@@ -42,11 +42,11 @@ I haven’t put any numerical representation for states in the last two pictures
 
 We can say that $$log_2(x) \;– \;log_2(M)$$ is a **k** coefficient.
 
-![](/assets/img/post/etr-enc-7/prec.png){: w="500"}
+![](/assets/img/post/etr-enc-7/prec.png){: w="450"}
 
 Of course, like in the case with AC we can’t think about encoding in isolation from decoding. Like in the example with encoding with base 2, for decoding, we need to do (x%M). The main difference now is the uneven growth of our base. In addition, at (x%M) for each symbol that we have, we get not just one value but rather a range of values between $$[Bs, Bs+Fs)$$. Both of these factors lead to the fact that by encoding symbol like $$(x*M)/Fs + Bs$$, latter at the decoding side $$(x*Fs)/M \;–\; Bs$$, we will not get to the right previous state of our base.
 
-![](/assets/img/post/etr-enc-7/rans_wrong.png){: w="600"}
+![](/assets/img/post/etr-enc-7/rans_wrong.png){: w="500"}
 
 At each particular step of encoding, it may seems that after we take reciprocal, we get roughly right answer, but actually, we lose information about where we are in ANS automate. Adding (x%F) in this case also will not help because we shuffle bits of the base (and with it lower M bits) too much.
 
